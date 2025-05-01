@@ -1,0 +1,547 @@
+/* 基础样式 */
+:root {
+    --primary-color: #ff3a2d;
+    --secondary-color: #222;
+    --dark-color: #111;
+    --light-color: #f4f4f4;
+    --danger-color: #dc3545;
+    --success-color: #28a745;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    background-color: var(--dark-color);
+    color: var(--light-color);
+    overflow-x: hidden;
+}
+
+a {
+    text-decoration: none;
+    color: var(--light-color);
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: var(--primary-color);
+}
+
+ul {
+    list-style: none;
+}
+
+h1, h2, h3 {
+    font-weight: 700;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+/* 加载动画 */
+.loader-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--dark-color);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.loader {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 58, 45, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 头部 */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 5%;
+    background-color: rgba(34, 34, 34, 0.9);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.logo h1 {
+    color: var(--light-color);
+    font-size: 28px;
+    position: relative;
+}
+
+.logo h1::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 30px;
+    height: 3px;
+    background-color: var(--primary-color);
+}
+
+nav ul {
+    display: flex;
+}
+
+nav ul li {
+    margin: 0 15px;
+}
+
+nav ul li a {
+    padding: 8px 0;
+    position: relative;
+    font-weight: 500;
+}
+
+nav ul li a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+nav ul li a:hover::after,
+nav ul li a.active::after {
+    width: 100%;
+}
+
+.header-buttons .btn-start {
+    background-color: var(--primary-color);
+    color: var(--light-color);
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.header-buttons .btn-start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(255, 58, 45, 0.4);
+}
+
+/* 英雄区域 */
+.hero {
+    height: 100vh;
+    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)), url('../images/escape-room-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    padding: 0 5%;
+}
+
+.hero-content {
+    max-width: 700px;
+}
+
+.hero-content h2 {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    line-height: 1.2;
+}
+
+.hero-content h2 span {
+    color: var(--primary-color);
+}
+
+.hero-content p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+}
+
+.btn-discover {
+    background-color: transparent;
+    color: var(--light-color);
+    border: 2px solid var(--primary-color);
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 4px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.btn-discover:hover {
+    background-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+/* 部分通用样式 */
+section {
+    padding: 100px 5%;
+}
+
+.section-title {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.section-title h2 {
+    font-size: 2.5rem;
+    position: relative;
+    display: inline-block;
+    padding-bottom: 15px;
+}
+
+.section-title h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background-color: var(--primary-color);
+}
+
+/* 关于区域 */
+.about {
+    background-color: var(--secondary-color);
+}
+
+.about-content {
+    display: flex;
+    justify-content: center;
+}
+
+.about-text {
+    max-width: 700px;
+    text-align: center;
+}
+
+.about-text p {
+    margin-bottom: 30px;
+    font-size: 1.1rem;
+}
+
+.features {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+.features li {
+    background-color: rgba(17, 17, 17, 0.7);
+    padding: 20px 30px;
+    border-radius: 8px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+.features li:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.features li i {
+    color: var(--primary-color);
+    margin-right: 15px;
+    font-size: 1.5rem;
+}
+
+/* 谜题区域 */
+.puzzles {
+    background-color: var(--dark-color);
+}
+
+.puzzles-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 30px;
+}
+
+.puzzle-viewer {
+    flex: 1;
+    min-width: 300px;
+    max-width: 700px;
+}
+
+#model-container {
+    height: 500px;
+    background-color: rgba(34, 34, 34, 0.7);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    position: relative;
+}
+
+.model-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.model-controls button {
+    background-color: var(--secondary-color);
+    color: var(--light-color);
+    padding: 10px;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+}
+
+.model-controls button:hover {
+    background-color: var(--primary-color);
+}
+
+.lighting-controls {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.lighting-controls input {
+    flex: 1;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: var(--secondary-color);
+    border-radius: 3px;
+    outline: none;
+}
+
+.lighting-controls input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.puzzle-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 0 0 300px;
+}
+
+.puzzle-item {
+    background-color: var(--secondary-color);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+.puzzle-item:hover,
+.puzzle-item.active {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.puzzle-item.active {
+    border: 2px solid var(--primary-color);
+}
+
+.puzzle-item img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.puzzle-item h3,
+.puzzle-item p {
+    padding: 10px 15px;
+}
+
+.puzzle-item h3 {
+    color: var(--primary-color);
+}
+
+.puzzle-item p {
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+/* 联系区域 */
+.contact {
+    background-color: var(--secondary-color);
+    text-align: center;
+}
+
+.contact-content p {
+    margin-bottom: 30px;
+    font-size: 1.1rem;
+}
+
+.contact-info {
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    flex-wrap: wrap;
+}
+
+.contact-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.contact-item i {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+/* 页脚 */
+footer {
+    background-color: var(--dark-color);
+    padding: 30px 5%;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.footer-links {
+    display: flex;
+    gap: 20px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        padding: 15px 5%;
+    }
+    
+    nav ul {
+        margin: 20px 0;
+    }
+    
+    .hero-content h2 {
+        font-size: 3rem;
+    }
+    
+    .puzzles-container {
+        flex-direction: column;
+    }
+    
+    .puzzle-selector {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 15px;
+    }
+    
+    .puzzle-item {
+        flex: 0 0 250px;
+    }
+    
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    nav ul li {
+        margin: 0 10px;
+    }
+    
+    .hero-content h2 {
+        font-size: 2.5rem;
+    }
+    
+    .section-title h2 {
+        font-size: 2rem;
+    }
+}
+
+/* 关于页面样式 */
+.about-page {
+    background-color: var(--secondary-color);
+    min-height: 100vh;
+    padding-top: 120px;
+}
+
+.about-page .about-text {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.about-page h3 {
+    color: var(--primary-color);
+    margin: 30px 0 15px;
+    font-size: 1.5rem;
+}
+
+.about-page p {
+    margin-bottom: 15px;
+    line-height: 1.8;
+}
+
+.declaration {
+    background-color: rgba(17, 17, 17, 0.7);
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary-color);
+}
+
+.references {
+    background-color: rgba(17, 17, 17, 0.7);
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.references li {
+    margin-bottom: 10px;
+    padding-left: 20px;
+    position: relative;
+}
+
+.references li::before {
+    content: '\f0c1';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+} 

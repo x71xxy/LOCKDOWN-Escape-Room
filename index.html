@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LOCKDOWN | Escape Room 3D Experience</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
+  </head>
+  <body>
+    <div class="loader-wrapper">
+      <div class="loader"></div>
+      <p>Loading the escape room...</p>
+    </div>
+
+    <header>
+      <div class="logo">
+        <h1>LOCKDOWN</h1>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="#" class="active">Home</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="#puzzles">Puzzles</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+      <div class="header-buttons">
+        <button class="btn-start">Start Game</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-content">
+          <h2>You Are <span>Locked In!</span></h2>
+          <p>Solve puzzles, find clues, escape the room</p>
+          <button class="btn-discover">Explore Room</button>
+        </div>
+      </section>
+
+      <section id="about" class="about">
+        <div class="section-title">
+          <h2>About The Challenge</h2>
+        </div>
+        <div class="about-content">
+          <div class="about-text">
+            <p>
+              You've been locked in a mysterious room and must solve three
+              different puzzles to escape. Each puzzle hides a clue to the next
+              step. Time is limited - can you make it out?
+            </p>
+            <ul class="features">
+              <li><i class="fas fa-lock"></i> Lockbox Code</li>
+              <li><i class="fas fa-lightbulb"></i> Sequence Switches</li>
+              <li><i class="fas fa-puzzle-piece"></i> Puzzle Pieces</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="puzzles" class="puzzles">
+        <div class="section-title">
+          <h2>Room Puzzles</h2>
+        </div>
+
+        <div class="puzzles-container">
+          <div class="puzzle-viewer">
+            <div id="model-container"></div>
+            <div class="model-controls">
+              <button id="wireframe-toggle">Wireframe Mode</button>
+              <button id="rotate-model">Rotate Model</button>
+              <button id="zoom-in">Zoom In</button>
+              <button id="zoom-out">Zoom Out</button>
+              <div class="lighting-controls">
+                <button id="light-toggle">Toggle Lights</button>
+                <input
+                  type="range"
+                  id="light-intensity"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  value="1"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="puzzle-selector">
+            <div class="puzzle-item active" data-model="lockbox">
+              <img src="images/lockbox-thumb.jpg" alt="Lockbox" />
+              <h3>Lockbox Code</h3>
+              <p>Enter the code to unlock</p>
+            </div>
+            <div class="puzzle-item" data-model="switches">
+              <img src="images/switches-thumb.jpg" alt="Sequence Switches" />
+              <h3>Sequence Switches</h3>
+              <p>Activate in correct order</p>
+            </div>
+            <div class="puzzle-item" data-model="puzzle">
+              <img src="images/puzzle-thumb.jpg" alt="Puzzle Pieces" />
+              <h3>Puzzle Pieces</h3>
+              <p>Rotate to complete pattern</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" class="contact">
+        <div class="section-title">
+          <h2>Contact Us</h2>
+        </div>
+        <div class="contact-content">
+          <p>Have questions or feedback? Get in touch with us</p>
+          <div class="contact-info">
+            <div class="contact-item">
+              <i class="fas fa-envelope"></i>
+              <p>contact@lockdown.com</p>
+            </div>
+            <div class="contact-item">
+              <i class="fas fa-phone"></i>
+              <p>+123 456 7890</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-content">
+        <div class="copyright">
+          <p>&copy; 2025 LOCKDOWN - All Rights Reserved</p>
+        </div>
+        <div class="footer-links">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Use</a>
+          <a href="https://github.com/yourusername/lockdown" target="_blank"
+            >GitHub</a
+          >
+        </div>
+      </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+  </body>
+</html>
