@@ -2,7 +2,7 @@
 let scene, camera, renderer, controls;
 let currentModel = null;
 let currentModelName = 'treasurechest';
-let light1, light2, light3;
+let light1, light2, light3, directionalLight;
 let isWireframe = false;
 let loadingManager;
 let treasurechestModel, switchesModel, puzzleModel;
@@ -48,16 +48,22 @@ function init() {
     controls.dampingFactor = 0.05;
 
     // Add lights
-    light1 = new THREE.PointLight(0xffffff, 1);
+    light1 = new THREE.PointLight(0xffffff, 1.2);
     light1.position.set(5, 5, 5);
     scene.add(light1);
 
-    light2 = new THREE.PointLight(0xffffff, 0.5);
+    light2 = new THREE.PointLight(0xffffff, 0.7);
     light2.position.set(-5, 5, -5);
     scene.add(light2);
 
-    light3 = new THREE.AmbientLight(0x404040, 0.5);
+    light3 = new THREE.AmbientLight(0x404040, 0.8);
     scene.add(light3);
+    
+    // Add directional light to better highlight the model
+    directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(0, 5, 10);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
 
     // Load models
     loadModels();
@@ -90,6 +96,14 @@ function loadModels() {
         treasurechestModel.scale.set(2, 2, 2);
         treasurechestModel.rotation.y = Math.PI / 4;
         
+        // Enable shadows for all meshes
+        treasurechestModel.traverse(function(child) {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+        
         // Set as default model
         currentModel = treasurechestModel;
         scene.add(currentModel);
@@ -103,6 +117,15 @@ function loadModels() {
         switchesModel = gltf.scene;
         switchesModel.scale.set(2, 2, 2);
         switchesModel.rotation.y = Math.PI / 4;
+        
+        // Enable shadows for all meshes
+        switchesModel.traverse(function(child) {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+        
         setupSwitchesInteractions(switchesModel);
     });
     
@@ -111,6 +134,15 @@ function loadModels() {
         puzzleModel = gltf.scene;
         puzzleModel.scale.set(2, 2, 2);
         puzzleModel.rotation.y = Math.PI / 4;
+        
+        // Enable shadows for all meshes
+        puzzleModel.traverse(function(child) {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+        
         setupPuzzleInteractions(puzzleModel);
     });
 }
@@ -246,8 +278,9 @@ function toggleWireframe() {
 
 // Adjust light intensity
 function adjustLightIntensity(value) {
-    light1.intensity = value;
-    light2.intensity = value / 2;
+    light1.intensity = value * 1.2;
+    light2.intensity = value * 0.7;
+    directionalLight.intensity = value;
 }
 
 // Rotate current model
