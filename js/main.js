@@ -216,8 +216,20 @@ function onModelClick(event) {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, camera);
     
-    // Check for intersections
-    const intersects = raycaster.intersectObjects(currentModel.children, true);
+    // 获取所有可能的交互目标 - 包括模型的所有子元素
+    const allTargets = [];
+    if (currentModel) {
+        currentModel.traverse(child => {
+            if (child.isMesh) {
+                allTargets.push(child);
+            }
+        });
+    }
+    
+    // Check for intersections with all targets
+    const intersects = raycaster.intersectObjects(allTargets, false);
+    
+    console.log("点击检测结果:", intersects.length > 0 ? intersects[0].object.name : "未命中任何物体");
     
     if (intersects.length > 0) {
         const object = intersects[0].object;
@@ -226,6 +238,7 @@ function onModelClick(event) {
         switch(currentModelName) {
             case 'treasurechest':
                 if (treasureChestInteractions) {
+                    // 直接传递被点击的对象给交互控制器
                     treasureChestInteractions.handleClick(object);
                 } else {
                     handleTreasureChestClick(object);
