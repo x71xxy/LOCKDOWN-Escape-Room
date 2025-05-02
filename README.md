@@ -34,7 +34,7 @@ LOCKDOWN/
 
 ## Puzzle Descriptions
 
-1. **Lockbox Code**: Click number buttons to input the code, model opens lid when correct
+1. **Treasure Chest**: Find and enter the hidden code to unlock the chest and reveal what's inside
 2. **Sequence Switches**: Click multiple colored buttons in the correct sequence to activate light mechanisms
 3. **Puzzle Pieces**: Click to rotate model pieces, triggers a hint when correct pattern is formed
 

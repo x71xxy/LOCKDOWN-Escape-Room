@@ -1,13 +1,13 @@
 // Global variables
 let scene, camera, renderer, controls;
 let currentModel = null;
-let currentModelName = 'lockbox';
+let currentModelName = 'treasurechest';
 let light1, light2, light3;
 let isWireframe = false;
 let loadingManager;
-let lockboxModel, switchesModel, puzzleModel;
+let treasurechestModel, switchesModel, puzzleModel;
 let puzzleSolved = {
-    lockbox: false,
+    treasurechest: false,
     switches: false,
     puzzle: false
 };
@@ -84,30 +84,30 @@ function onWindowResize() {
 function loadModels() {
     const loader = new THREE.GLTFLoader(loadingManager);
     
-    // Load lockbox model
-    loader.load('models/lockbox.glb', function(gltf) {
-        lockboxModel = gltf.scene;
-        lockboxModel.scale.set(2, 2, 2);
-        lockboxModel.rotation.y = Math.PI / 4;
+    // Load treasure chest model
+    loader.load('models/treasurechest/treasure_chest.glb', function(gltf) {
+        treasurechestModel = gltf.scene;
+        treasurechestModel.scale.set(2, 2, 2);
+        treasurechestModel.rotation.y = Math.PI / 4;
         
         // Set as default model
-        currentModel = lockboxModel;
+        currentModel = treasurechestModel;
         scene.add(currentModel);
         
         // Setup interactive parts
-        setupLockboxInteractions(lockboxModel);
+        setupTreasureChestInteractions(treasurechestModel);
     });
     
-    // Load sequence switches model
-    loader.load('models/switches.glb', function(gltf) {
+    // Load sequence switches model - placeholder for now
+    loader.load('models/treasurechest/treasure_chest.glb', function(gltf) {
         switchesModel = gltf.scene;
         switchesModel.scale.set(2, 2, 2);
         switchesModel.rotation.y = Math.PI / 4;
         setupSwitchesInteractions(switchesModel);
     });
     
-    // Load puzzle pieces model
-    loader.load('models/puzzle.glb', function(gltf) {
+    // Load puzzle pieces model - placeholder for now
+    loader.load('models/treasurechest/treasure_chest.glb', function(gltf) {
         puzzleModel = gltf.scene;
         puzzleModel.scale.set(2, 2, 2);
         puzzleModel.rotation.y = Math.PI / 4;
@@ -124,8 +124,8 @@ function switchModel(modelName) {
     
     // Add new model to scene
     switch(modelName) {
-        case 'lockbox':
-            currentModel = lockboxModel;
+        case 'treasurechest':
+            currentModel = treasurechestModel;
             break;
         case 'switches':
             currentModel = switchesModel;
@@ -145,18 +145,13 @@ function switchModel(modelName) {
     }
 }
 
-// Lockbox interactions setup
-function setupLockboxInteractions(model) {
-    // Setup lockbox interaction logic
-    // For example, click number buttons to input code
+// Treasure chest interactions setup
+function setupTreasureChestInteractions(model) {
+    // Setup treasure chest interaction logic
+    // For example, click to enter password code and open the chest
     // Actual implementation depends on specific model structure
     
-    // Example: add click events to number buttons
-    // model.getObjectByName('button1').userData.clickable = true;
-    // model.getObjectByName('button2').userData.clickable = true;
-    // ...
-    
-    console.log("Lockbox interactions setup complete");
+    console.log("Treasure chest interactions setup complete");
 }
 
 // Sequence switches interactions setup
@@ -198,8 +193,8 @@ function onModelClick(event) {
         
         // Handle click based on current model type
         switch(currentModelName) {
-            case 'lockbox':
-                handleLockboxClick(object);
+            case 'treasurechest':
+                handleTreasureChestClick(object);
                 break;
             case 'switches':
                 handleSwitchesClick(object);
@@ -211,12 +206,12 @@ function onModelClick(event) {
     }
 }
 
-// Handle lockbox click
-function handleLockboxClick(object) {
+// Handle treasure chest click
+function handleTreasureChestClick(object) {
     // Check if clicked object is an interactive button
     if (object.userData.clickable) {
-        console.log("Clicked lockbox button: " + object.name);
-        // Add password verification logic here
+        console.log("Clicked treasure chest part: " + object.name);
+        // Add chest opening logic here
     }
 }
 
