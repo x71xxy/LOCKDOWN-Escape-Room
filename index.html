@@ -13,6 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
+    <script src="js/treasure-chest-interactions.js"></script>
   </head>
   <body>
     <div class="loader-wrapper">
@@ -74,6 +75,16 @@
         <div class="puzzles-container">
           <div class="puzzle-viewer">
             <div id="model-container"></div>
+            <div id="code-display" class="code-display">
+              <div class="code-title">密码锁</div>
+              <div class="code-digits">
+                <span class="code-digit">-</span>
+                <span class="code-digit">-</span>
+                <span class="code-digit">-</span>
+                <span class="code-digit">-</span>
+              </div>
+              <div class="code-hint">输入四位数字密码解锁宝箱</div>
+            </div>
             <div class="model-controls">
               <button id="wireframe-toggle">Wireframe Mode</button>
               <button id="rotate-model">Rotate Model</button>

@@ -544,4 +544,48 @@ footer {
     position: absolute;
     left: 0;
     color: var(--primary-color);
+}
+
+/* 添加密码显示样式 */
+.code-display {
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin: 10px 0;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.code-title {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #ff3333;
+}
+
+.code-digits {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.code-digit {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    background-color: #333;
+    border: 2px solid #555;
+    border-radius: 5px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #00ff00;
+}
+
+.code-hint {
+    font-size: 0.9rem;
+    color: #aaa;
 } 

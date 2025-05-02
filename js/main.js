@@ -6,6 +6,7 @@ let light1, light2, light3, directionalLight;
 let isWireframe = false;
 let loadingManager;
 let treasurechestModel, switchesModel, puzzleModel;
+let treasureChestInteractions;
 let puzzleSolved = {
     treasurechest: false,
     switches: false,
@@ -179,10 +180,8 @@ function switchModel(modelName) {
 
 // Treasure chest interactions setup
 function setupTreasureChestInteractions(model) {
-    // Setup treasure chest interaction logic
-    // For example, click to enter password code and open the chest
-    // Actual implementation depends on specific model structure
-    
+    // 创建交互控制器实例
+    treasureChestInteractions = new TreasureChestInteractions(model, scene, camera);
     console.log("Treasure chest interactions setup complete");
 }
 
@@ -226,7 +225,11 @@ function onModelClick(event) {
         // Handle click based on current model type
         switch(currentModelName) {
             case 'treasurechest':
-                handleTreasureChestClick(object);
+                if (treasureChestInteractions) {
+                    treasureChestInteractions.handleClick(object);
+                } else {
+                    handleTreasureChestClick(object);
+                }
                 break;
             case 'switches':
                 handleSwitchesClick(object);
@@ -355,6 +358,12 @@ function initEventListeners() {
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
+    
+    // 更新宝箱交互状态
+    if (treasureChestInteractions && currentModelName === 'treasurechest') {
+        treasureChestInteractions.update();
+    }
+    
     renderer.render(scene, camera);
 }
 
