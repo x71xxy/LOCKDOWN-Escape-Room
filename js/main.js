@@ -2,7 +2,7 @@
 let scene, camera, renderer, controls;
 let currentModel = null;
 let currentModelName = 'treasurechest';
-let light1, light2, light3, directionalLight;
+let light1, light2, light3, directionalLight, sideLight;
 let isWireframe = false;
 let loadingManager;
 let treasurechestModel, switchesModel, puzzleModel;
@@ -56,6 +56,18 @@ let sounds = {
 
 // Web Audio API context
 let audioContext = null;
+
+// Add new variables for note frequencies
+const noteFrequencies = {
+    C: 261.63,  // 哆
+    D: 293.66,  // 瑞
+    E: 329.63,  // 咪
+    F: 349.23,  // 发
+    G: 392.00,  // 嗦
+    A: 440.00,  // 啦
+    B: 493.88,  // 西
+    C2: 523.25  // 高音哆
+};
 
 // Sound effect functions
 function loadSounds() {
@@ -118,6 +130,13 @@ function playSound(soundName) {
         return;
     }
     
+    // 处理音符音效
+    if (soundName.startsWith('note_')) {
+        const note = soundName.substring(5); // Get the note part (note_C -> C)
+        playNoteSound(note);
+        return;
+    }
+    
     // For synthesized sounds
     switch (soundName) {
         case 'keypadClick':
@@ -151,6 +170,39 @@ function playClickSound(frequency = 160, duration = 0.08) {
         oscillator.stop(audioContext.currentTime + duration);
     } catch (e) {
         console.error("Error playing click sound:", e);
+    }
+}
+
+// 播放音符音效
+function playNoteSound(note = 'C', duration = 0.3) {
+    try {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        // 使用正弦波模拟乐器声音
+        oscillator.type = 'sine';
+        
+        // 设置音符频率
+        const frequency = noteFrequencies[note] || noteFrequencies.C;
+        oscillator.frequency.value = frequency;
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // 渐入渐出效果
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
+        gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.1);
+        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration);
+        
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + duration);
+    } catch (e) {
+        console.error("Error playing note sound:", e);
     }
 }
 
@@ -229,6 +281,16 @@ function init() {
     directionalLight.position.set(0, 5, 10);
     directionalLight.castShadow = true;
     scene.add(directionalLight);
+    
+    // Add side light to illuminate the treasure chest better
+    sideLight = new THREE.SpotLight(0xffa54d, 1.5);
+    sideLight.position.set(-8, 2, 0);
+    sideLight.angle = Math.PI / 6;
+    sideLight.penumbra = 0.3;
+    sideLight.castShadow = true;
+    sideLight.shadow.mapSize.width = 1024;
+    sideLight.shadow.mapSize.height = 1024;
+    scene.add(sideLight);
 
     // Load sounds
     loadSounds();
@@ -289,15 +351,17 @@ function loadModels() {
         setupTreasureChestInteractions(treasurechestModel);
     });
     
-    // Load sequence switches model - placeholder for now
-    loader.load('models/treasurechest/treasure_chest.glb', function(gltf) {
+    // Load sequence switches model
+    loader.load('models/switches/swithches.glb', function(gltf) {
         switchesModel = gltf.scene;
         switchesModel.scale.set(2, 2, 2);
         switchesModel.rotation.y = Math.PI / 4;
+        switchesModel.position.set(0, -1, 0); // Adjust position as needed
         
         // Store animations
         if (gltf.animations && gltf.animations.length > 0) {
             switchesModel.animations = gltf.animations;
+            console.log(`Found ${gltf.animations.length} animations in the switches model`);
         }
         
         // Enable shadows for all meshes
@@ -305,10 +369,61 @@ function loadModels() {
             if (child.isMesh) {
                 child.castShadow = true;
                 child.receiveShadow = true;
+                
+                // Apply wood material to ButtonBase immediately
+                if (child.name === 'ButtonBase') {
+                    console.log("Applying wood material to ButtonBase during load");
+                    
+                    // Create a wood texture material
+                    const woodMaterial = new THREE.MeshStandardMaterial({
+                        color: 0x3d2314, // Rich dark brown
+                        roughness: 0.7,
+                        metalness: 0.1
+                    });
+                    
+                    // Create a wood texture loader
+                    const textureLoader = new THREE.TextureLoader();
+                    
+                    // Apply immediate color (texture will load asynchronously)
+                    child.material = woodMaterial;
+                    
+                    // Try to load wood texture
+                    textureLoader.load(
+                        'https://threejs.org/examples/textures/hardwood2_diffuse.jpg',
+                        function(texture) {
+                            texture.wrapS = THREE.RepeatWrapping;
+                            texture.wrapT = THREE.RepeatWrapping;
+                            texture.repeat.set(2, 1);
+                            woodMaterial.map = texture;
+                            
+                            // Also load bump map
+                            textureLoader.load(
+                                'https://threejs.org/examples/textures/hardwood2_bump.jpg',
+                                function(bumpMap) {
+                                    bumpMap.wrapS = THREE.RepeatWrapping;
+                                    bumpMap.wrapT = THREE.RepeatWrapping;
+                                    bumpMap.repeat.set(2, 1);
+                                    woodMaterial.bumpMap = bumpMap;
+                                    woodMaterial.bumpScale = 0.05;
+                                }
+                            );
+                        }
+                    );
+                }
             }
         });
         
+        // Debug: Log model structure
+        console.log("Switches model structure:");
+        logModelStructure(switchesModel);
+        
+        // Hide initially
+        switchesModel.visible = false;
+        scene.add(switchesModel);
+        
         setupSwitchesInteractions(switchesModel);
+    }, undefined, function(error) {
+        console.error('Error loading switches model:', error);
     });
     
     // Load puzzle pieces model - placeholder for now
@@ -330,6 +445,10 @@ function loadModels() {
             }
         });
         
+        // Hide initially
+        puzzleModel.visible = false;
+        scene.add(puzzleModel);
+        
         setupPuzzleInteractions(puzzleModel);
     });
 }
@@ -350,12 +469,29 @@ function logModelStructure(model) {
 
 // Switch current model
 function switchModel(modelName) {
-    // Remove current model from scene
-    if (currentModel) {
-        scene.remove(currentModel);
+    if (currentModelName === modelName) return;
+    
+    console.log(`Switching model to: ${modelName}`);
+    
+    // 当切换离开switches模型时，清除颜色标签
+    if (currentModelName === 'switches') {
+        document.querySelectorAll('.color-label').forEach(label => {
+            label.remove();
+        });
     }
     
-    // Add new model to scene
+    // Hide current model
+    if (currentModel) {
+        currentModel.visible = false;
+    }
+    
+    // Show requested model
+    currentModelName = modelName;
+    
+    // Reset camera and controls
+    camera.position.set(0, 0, 5);
+    controls.reset();
+    
     switch(modelName) {
         case 'treasurechest':
             currentModel = treasurechestModel;
@@ -369,13 +505,23 @@ function switchModel(modelName) {
     }
     
     if (currentModel) {
-        scene.add(currentModel);
-        currentModelName = modelName;
-        
-        // Reset camera position
-        camera.position.z = 5;
-        controls.update();
+        currentModel.visible = true;
     }
+    
+    // Toggle submit button visibility
+    const submitContainer = document.getElementById('submit-button-container');
+    if (submitContainer) {
+        submitContainer.style.display = currentModelName === 'switches' ? 'block' : 'none';
+    }
+    
+    // Update active class on puzzle items
+    document.querySelectorAll('.puzzle-item').forEach(item => {
+        if (item.dataset.model === modelName) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
 }
 
 // Treasure chest interactions setup
@@ -618,10 +764,311 @@ function highlightPasswordPanel(highlight) {
 
 // Sequence switches interactions setup
 function setupSwitchesInteractions(model) {
-    // Setup sequence switches interaction logic
-    // For example, click colored buttons in specific order
+    console.log('Setting up sequence switches interactions');
     
-    console.log("Sequence switches interactions setup complete");
+    // Store all button objects
+    const buttons = [];
+    const buttonSlots = [];
+    let buttonBase = null;
+    
+    // Find all buttons and button slots in the model
+    model.traverse((child) => {
+        if (child.name && child.name.startsWith('button_') && !child.name.includes('slot')) {
+            buttons.push(child);
+            console.log(`Found button: ${child.name}`);
+        }
+        if (child.name && child.name.includes('button_slot')) {
+            buttonSlots.push(child);
+            console.log(`Found button slot: ${child.name}`);
+        }
+        if (child.name === 'ButtonBase') {
+            buttonBase = child;
+            console.log(`Found button base: ${child.name}`);
+        }
+    });
+    
+    // Store original materials for all buttons
+    const originalButtonMaterials = {};
+    buttons.forEach(button => {
+        if (button.material) {
+            originalButtonMaterials[button.name] = button.material.clone();
+        }
+    });
+    
+    // Rainbow colors for buttons (in RGB format)
+    const buttonColors = [
+        new THREE.Color(1.0, 0.1, 0.1),   // 鲜艳的红色
+        new THREE.Color(1.0, 0.5, 0.0),   // 鲜艳的橙色
+        new THREE.Color(1.0, 1.0, 0.0),   // 鲜艳的黄色
+        new THREE.Color(0.0, 0.8, 0.0),   // 鲜艳的绿色
+        new THREE.Color(0.1, 0.4, 1.0),   // 鲜艳的蓝色
+        new THREE.Color(0.5, 0.0, 0.9),   // 鲜艳的靛色
+        new THREE.Color(0.9, 0.1, 0.9)    // 鲜艳的紫色
+    ];
+    
+    // 颜色名称（用于显示标签）
+    const colorNames = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Purple"];
+    
+    // Current color index for each button (starts at -1 = no color)
+    const buttonColorIndices = {};
+    buttons.forEach(button => {
+        buttonColorIndices[button.name] = -1;
+    });
+    
+    // Add button click handlers
+    window.switchesClickHandler = (event) => {
+        const intersects = getIntersects(event);
+        
+        for (let i = 0; i < intersects.length; i++) {
+            const object = intersects[i].object;
+            
+            // Check if clicked object is a button
+            if (object.name && object.name.startsWith('button_') && !object.name.includes('slot')) {
+                cycleButtonColor(object);
+                playSound('keypadClick');
+                break;
+            }
+        }
+    };
+    
+    // Function to cycle button color
+    function cycleButtonColor(button) {
+        const currentIndex = buttonColorIndices[button.name];
+        const nextIndex = (currentIndex + 1) % 8; // 7 colors + 1 no color
+        buttonColorIndices[button.name] = nextIndex;
+        
+        // 播放对应音符的声音
+        if (nextIndex >= 0 && nextIndex <= 6) {
+            // 对应关系：红-哆，橙-瑞，黄-咪，绿-发，蓝-嗦，靛-啦，紫-西
+            const notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+            playSound('note_' + notes[nextIndex]);
+        } else {
+            // 无色时播放高音哆
+            playSound('note_C2');
+        }
+        
+        if (nextIndex === -1 || nextIndex === 7) {
+            // Reset to original material (no color)
+            if (originalButtonMaterials[button.name]) {
+                button.material = originalButtonMaterials[button.name].clone();
+            }
+        } else {
+            // Apply color with enhanced visibility
+            const newMaterial = new THREE.MeshStandardMaterial({
+                color: buttonColors[nextIndex],
+                metalness: 0.8,
+                roughness: 0.1,
+                emissive: buttonColors[nextIndex],  // 添加自发光
+                emissiveIntensity: 0.3             // 适度的自发光强度
+            });
+            button.material = newMaterial;
+            
+            // 获取按钮编号用于显示标签
+            const buttonNumber = parseInt(button.name.split('_')[1]);
+            
+            // 删除之前的标签（如果存在）
+            const existingLabel = document.getElementById(`color-label-${buttonNumber}`);
+            if (existingLabel) {
+                existingLabel.remove();
+            }
+            
+            // 添加颜色名称标签
+            const colorLabel = document.createElement('div');
+            colorLabel.id = `color-label-${buttonNumber}`;
+            colorLabel.className = 'color-label';
+            colorLabel.textContent = colorNames[nextIndex];
+            colorLabel.style.position = 'absolute';
+            colorLabel.style.color = 'white';
+            colorLabel.style.backgroundColor = 'rgba(0,0,0,0.7)';
+            colorLabel.style.padding = '2px 5px';
+            colorLabel.style.borderRadius = '3px';
+            colorLabel.style.fontSize = '12px';
+            colorLabel.style.fontWeight = 'bold';
+            colorLabel.style.zIndex = '10';
+            
+            // 计算标签位置（基于按钮数量动态计算）
+            const buttonCount = buttons.length;
+            const modelContainer = document.getElementById('model-container');
+            const leftOffset = modelContainer.offsetWidth * 0.1;
+            const buttonSpacing = (modelContainer.offsetWidth * 0.8) / (buttonCount - 1);
+            const leftPos = leftOffset + buttonNumber * buttonSpacing;
+            
+            colorLabel.style.bottom = '70px';
+            colorLabel.style.left = `${leftPos}px`;
+            colorLabel.style.transform = 'translateX(-50%)';
+            colorLabel.style.pointerEvents = 'none'; // 防止干扰点击
+            
+            modelContainer.appendChild(colorLabel);
+        }
+    }
+    
+    // 函数用于清除所有颜色标签
+    function clearColorLabels() {
+        document.querySelectorAll('.color-label').forEach(label => {
+            label.remove();
+        });
+    }
+    
+    // Create and add submit button to the scene
+    createSubmitButton();
+    
+    function createSubmitButton() {
+        // Create submit button container
+        const submitContainer = document.createElement('div');
+        submitContainer.id = 'submit-button-container';
+        submitContainer.style.position = 'absolute';
+        submitContainer.style.bottom = '20px';
+        submitContainer.style.left = '50%';
+        submitContainer.style.transform = 'translateX(-50%)';
+        submitContainer.style.display = currentModelName === 'switches' ? 'block' : 'none';
+        
+        // Create submit button
+        const submitButton = document.createElement('button');
+        submitButton.textContent = 'Submit Sequence';
+        submitButton.className = 'submit-button';
+        submitButton.style.padding = '10px 20px';
+        submitButton.style.backgroundColor = '#2c3e50';
+        submitButton.style.color = 'white';
+        submitButton.style.border = 'none';
+        submitButton.style.borderRadius = '5px';
+        submitButton.style.cursor = 'pointer';
+        submitButton.style.fontSize = '16px';
+        submitButton.style.fontWeight = 'bold';
+        submitButton.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+        
+        // Add hover effect
+        submitButton.onmouseover = () => {
+            submitButton.style.backgroundColor = '#34495e';
+        };
+        submitButton.onmouseout = () => {
+            submitButton.style.backgroundColor = '#2c3e50';
+        };
+        
+        // Add click event for submission
+        submitButton.onclick = checkSequence;
+        
+        // Add button to container
+        submitContainer.appendChild(submitButton);
+        
+        // Add container to document
+        document.getElementById('model-container').appendChild(submitContainer);
+    }
+    
+    // Function to check if sequence is correct
+    function checkSequence() {
+        // The correct sequence is the rainbow order (red, orange, yellow, green, blue, indigo, purple)
+        const correctSequence = [0, 1, 2, 3, 4, 5, 6]; // Indices of colors in order
+        
+        // Get current sequence from buttons
+        const currentSequence = [];
+        for (let i = 0; i < buttons.length; i++) {
+            const buttonName = `button_${i}`;
+            const colorIndex = buttonColorIndices[buttonName];
+            if (colorIndex >= 0 && colorIndex <= 6) {
+                currentSequence.push(colorIndex);
+            } else {
+                // If any button is not set, consider it incorrect
+                showResult(false, 'All buttons must have a color assigned!');
+                return;
+            }
+        }
+        
+        // Check if sequence matches
+        let isCorrect = true;
+        for (let i = 0; i < correctSequence.length; i++) {
+            if (i >= currentSequence.length || currentSequence[i] !== correctSequence[i]) {
+                isCorrect = false;
+                break;
+            }
+        }
+        
+        showResult(isCorrect);
+        
+        if (isCorrect) {
+            puzzleSolved.switches = true;
+            
+            // 播放成功的音阶
+            playSuccessfulSequence();
+            
+            // 如果成功解谜，在几秒后移除标签
+            setTimeout(() => {
+                clearColorLabels();
+            }, 5000);
+        } else {
+            playSound('passwordError');
+        }
+    }
+    
+    // 添加连续播放上行音阶的函数
+    function playSuccessfulSequence() {
+        const notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C2'];
+        let delay = 0;
+        
+        notes.forEach((note, index) => {
+            setTimeout(() => {
+                playNoteSound(note, 0.3);
+            }, delay);
+            delay += 250; // 每个音符间隔250毫秒
+        });
+    }
+
+    // Function to show result message
+    function showResult(isCorrect, message = null) {
+        // Remove any existing message
+        const existingMessage = document.getElementById('sequence-result');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+        
+        // Create result message
+        const resultMessage = document.createElement('div');
+        resultMessage.id = 'sequence-result';
+        resultMessage.style.position = 'absolute';
+        resultMessage.style.top = '20px';
+        resultMessage.style.left = '50%';
+        resultMessage.style.transform = 'translateX(-50%)';
+        resultMessage.style.padding = '10px 20px';
+        resultMessage.style.borderRadius = '5px';
+        resultMessage.style.color = 'white';
+        resultMessage.style.fontWeight = 'bold';
+        resultMessage.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+        resultMessage.style.zIndex = '1000';
+        
+        if (isCorrect) {
+            resultMessage.style.backgroundColor = '#27ae60';
+            resultMessage.textContent = 'Correct sequence! Puzzle solved!';
+        } else {
+            resultMessage.style.backgroundColor = '#c0392b';
+            resultMessage.textContent = message || 'Incorrect sequence! Try again.';
+        }
+        
+        // Add message to container
+        document.getElementById('model-container').appendChild(resultMessage);
+        
+        // Remove message after 3 seconds
+        setTimeout(() => {
+            if (document.getElementById('sequence-result')) {
+                document.getElementById('sequence-result').remove();
+            }
+        }, 3000);
+    }
+}
+
+// Helper function to get intersects from mouse event
+function getIntersects(event) {
+    // Get mouse position
+    const modelContainer = document.getElementById('model-container');
+    const rect = modelContainer.getBoundingClientRect();
+    const mouseX = ((event.clientX - rect.left) / modelContainer.offsetWidth) * 2 - 1;
+    const mouseY = -((event.clientY - rect.top) / modelContainer.offsetHeight) * 2 + 1;
+    
+    // Update the picking ray with the camera and mouse position
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2(mouseX, mouseY);
+    raycaster.setFromCamera(mouse, camera);
+    
+    // Calculate objects intersecting the picking ray
+    return raycaster.intersectObjects(scene.children, true);
 }
 
 // Puzzle pieces interactions setup
@@ -634,33 +1081,36 @@ function setupPuzzleInteractions(model) {
 
 // Handle 3D object click
 function onModelClick(event) {
+    // Get mouse position in normalized device coordinates (-1 to +1)
     const modelContainer = document.getElementById('model-container');
     const rect = modelContainer.getBoundingClientRect();
-    
-    // Calculate mouse position
     const mouse = {
         x: ((event.clientX - rect.left) / modelContainer.offsetWidth) * 2 - 1,
         y: -((event.clientY - rect.top) / modelContainer.offsetHeight) * 2 + 1
     };
-    
-    // Create raycaster
+
+    // Update the picking ray with the camera and mouse position
     const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(mouse, camera);
-    
-    // Check for intersections with all objects in the scene that are part of the current model
+    raycaster.setFromCamera(new THREE.Vector2(mouse.x, mouse.y), camera);
+
+    // Calculate objects intersecting the picking ray
     const intersects = raycaster.intersectObjects(scene.children, true);
-    
+
     if (intersects.length > 0) {
         const object = intersects[0].object;
-        console.log("Clicked on object:", object.name, "Type:", object.userData.type);
-        
-        // Handle click based on current model type
-        switch(currentModelName) {
+        console.log('Clicked on:', object.name);
+
+        // Handle interactions based on the current model
+        switch (currentModelName) {
             case 'treasurechest':
                 handleTreasureChestClick(object, mouse);
                 break;
             case 'switches':
-                handleSwitchesClick(object);
+                if (window.switchesClickHandler) {
+                    window.switchesClickHandler(event);
+                } else {
+                    console.log('Switches click handler not initialized');
+                }
                 break;
             case 'puzzle':
                 handlePuzzleClick(object);
@@ -1295,10 +1745,8 @@ function toggleLid() {
 
 // Handle switches click
 function handleSwitchesClick(object) {
-    if (object.userData.clickable) {
-        console.log("Clicked switch: " + object.name);
-        // Add switch sequence logic here
-    }
+    // This function is now handled through the switchesClickHandler
+    console.log('Using switchesClickHandler for button interactions');
 }
 
 // Handle puzzle click
