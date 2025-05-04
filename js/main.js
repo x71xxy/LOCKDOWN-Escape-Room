@@ -990,6 +990,11 @@ function setupSwitchesInteractions(model) {
             // 播放成功的音阶
             playSuccessfulSequence();
             
+            // 显示第三关的线索
+            setTimeout(() => {
+                showNextPuzzleClue();
+            }, 2000);
+            
             // 如果成功解谜，在几秒后移除标签
             setTimeout(() => {
                 clearColorLabels();
@@ -1876,4 +1881,60 @@ function animate() {
 }
 
 // Initialize when page is loaded
-window.addEventListener('load', init); 
+window.addEventListener('load', init);
+
+// 添加显示下一关线索的函数
+function showNextPuzzleClue() {
+    // 创建线索容器
+    const clueContainer = document.createElement('div');
+    clueContainer.id = 'puzzle-clue';
+    clueContainer.style.position = 'absolute';
+    clueContainer.style.top = '50%';
+    clueContainer.style.left = '50%';
+    clueContainer.style.transform = 'translate(-50%, -50%)';
+    clueContainer.style.padding = '20px';
+    clueContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    clueContainer.style.border = '2px solid #ffcc00';
+    clueContainer.style.borderRadius = '10px';
+    clueContainer.style.color = 'white';
+    clueContainer.style.fontFamily = 'monospace';
+    clueContainer.style.fontSize = '16px';
+    clueContainer.style.zIndex = '1000';
+    clueContainer.style.textAlign = 'center';
+    clueContainer.style.boxShadow = '0 0 20px rgba(255, 204, 0, 0.5)';
+    
+    // 线索内容 - 这里可以自定义为第三关需要的提示
+    clueContainer.innerHTML = `
+        <h3 style="color: #ffcc00; margin-top: 0;">隐藏信息已解锁</h3>
+        <p>拼图的正确排列顺序为：</p>
+        <div style="font-size: 24px; letter-spacing: 5px; margin: 15px 0; color: #ffcc00;">3-1-4-2</div>
+        <p>注意角落的标记...</p>
+        <button id="close-clue" style="background: #ffcc00; color: black; border: none; padding: 5px 15px; margin-top: 10px; cursor: pointer; border-radius: 5px;">关闭</button>
+    `;
+    
+    // 添加到模型容器
+    document.getElementById('model-container').appendChild(clueContainer);
+    
+    // 添加关闭按钮事件
+    document.getElementById('close-clue').addEventListener('click', function() {
+        document.getElementById('puzzle-clue').remove();
+    });
+    
+    // 闪烁效果
+    let fadeEffect = setInterval(() => {
+        if (document.getElementById('puzzle-clue')) {
+            const border = document.getElementById('puzzle-clue').style.borderColor;
+            document.getElementById('puzzle-clue').style.borderColor = 
+                (border === 'rgb(255, 204, 0)') ? '#fff' : '#ffcc00';
+        } else {
+            clearInterval(fadeEffect);
+        }
+    }, 500);
+    
+    // 自动关闭
+    setTimeout(() => {
+        if (document.getElementById('puzzle-clue')) {
+            document.getElementById('puzzle-clue').remove();
+        }
+    }, 15000);
+} 
