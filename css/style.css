@@ -350,48 +350,60 @@ section {
 }
 
 .puzzle-selector {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
-    flex: 0 0 300px;
+    margin-top: 30px;
 }
 
 .puzzle-item {
     background-color: var(--secondary-color);
     border-radius: 8px;
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
     cursor: pointer;
 }
 
 .puzzle-item:hover,
-.puzzle-item.active {
+.puzzle-item:focus {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
 .puzzle-item.active {
     border: 2px solid var(--primary-color);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
-.puzzle-item img {
-    width: 100%;
-    height: 150px;
-    object-fit: cover;
+.puzzle-icon {
+    margin-bottom: 15px;
+}
+
+.puzzle-icon i {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    transition: transform 0.3s ease;
+}
+
+.puzzle-item:hover .puzzle-icon i {
+    transform: scale(1.1);
 }
 
 .puzzle-item h3,
 .puzzle-item p {
-    padding: 10px 15px;
+    margin-bottom: 10px;
 }
 
 .puzzle-item h3 {
-    color: var(--primary-color);
+    color: var(--light-color);
 }
 
 .puzzle-item p {
+    color: #aaa;
     font-size: 0.9rem;
-    color: #ccc;
 }
 
 /* 联系区域 */
@@ -546,46 +558,7 @@ footer {
     color: var(--primary-color);
 }
 
-/* 添加密码显示样式 */
-.code-display {
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 15px;
-    border-radius: 10px;
-    margin: 10px 0;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.code-title {
-    font-size: 1.2rem;
-    margin-bottom: 10px;
-    font-weight: bold;
-    color: #ff3333;
-}
-
-.code-digits {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.code-digit {
-    display: inline-block;
-    width: 40px;
-    height: 40px;
-    line-height: 40px;
-    background-color: #333;
-    border: 2px solid #555;
-    border-radius: 5px;
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #00ff00;
-}
-
-.code-hint {
-    font-size: 0.9rem;
-    color: #aaa;
+/* Font Awesome custom icon for treasure chest */
+.fa-chest:before {
+  content: "\f49e"; /* Using box-open code */
 } 
