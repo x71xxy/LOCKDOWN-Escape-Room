@@ -2,7 +2,7 @@
 let scene, camera, renderer, controls;
 let currentModel = null;
 let currentModelName = 'treasurechest';
-let light1, light2, light3, directionalLight, sideLight;
+let light1, light2, light3, directionalLight, sideLight, sunLight;
 let isWireframe = false;
 let loadingManager;
 let treasurechestModel, switchesModel, puzzleModel;
@@ -11,6 +11,13 @@ let puzzleSolved = {
     switches: false,
     puzzle: false
 };
+
+// Breathing light effect variables
+let centerGoldSphere = null;
+let centerGoldOriginalEmissive = null;
+let breathingLightActive = false;
+let breathingLightIntensity = 0;
+
 // Add new variables for chest animation
 let chestAnimationMixer = null;
 let chestOpenAction = null;
@@ -59,14 +66,14 @@ let audioContext = null;
 
 // Add new variables for note frequencies
 const noteFrequencies = {
-    C: 261.63,  // 哆
-    D: 293.66,  // 瑞
-    E: 329.63,  // 咪
-    F: 349.23,  // 发
-    G: 392.00,  // 嗦
-    A: 440.00,  // 啦
-    B: 493.88,  // 西
-    C2: 523.25  // 高音哆
+    C: 261.63,  // Do
+    D: 293.66,  // Re
+    E: 329.63,  // Mi
+    F: 349.23,  // Fa
+    G: 392.00,  // Sol
+    A: 440.00,  // La
+    B: 493.88,  // Ti
+    C2: 523.25  // High Do
 };
 
 // Sound effect functions
@@ -130,7 +137,7 @@ function playSound(soundName) {
         return;
     }
     
-    // 处理音符音效
+    // Process note sound effects
     if (soundName.startsWith('note_')) {
         const note = soundName.substring(5); // Get the note part (note_C -> C)
         playNoteSound(note);
@@ -173,7 +180,7 @@ function playClickSound(frequency = 160, duration = 0.08) {
     }
 }
 
-// 播放音符音效
+// Play note sound
 function playNoteSound(note = 'C', duration = 0.3) {
     try {
         if (!audioContext) {
@@ -183,17 +190,17 @@ function playNoteSound(note = 'C', duration = 0.3) {
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
-        // 使用正弦波模拟乐器声音
+        // Use sine wave to simulate instrument sound
         oscillator.type = 'sine';
         
-        // 设置音符频率
+        // Set note frequency
         const frequency = noteFrequencies[note] || noteFrequencies.C;
         oscillator.frequency.value = frequency;
         
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
         
-        // 渐入渐出效果
+        // Fade in and fade out effect
         gainNode.gain.setValueAtTime(0, audioContext.currentTime);
         gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
         gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.1);
@@ -291,6 +298,20 @@ function init() {
     sideLight.shadow.mapSize.width = 1024;
     sideLight.shadow.mapSize.height = 1024;
     scene.add(sideLight);
+    
+    // Add sun light for puzzle model
+    sunLight = new THREE.DirectionalLight(0xffffff, 0);  // Initially off (intensity 0)
+    sunLight.position.set(0, 20, 5);
+    sunLight.castShadow = true;
+    // Set up wide shadow camera to cover the entire puzzle
+    sunLight.shadow.camera.left = -10;
+    sunLight.shadow.camera.right = 10;
+    sunLight.shadow.camera.top = 10;
+    sunLight.shadow.camera.bottom = -10;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.bias = -0.0001;
+    scene.add(sunLight);
 
     // Load sounds
     loadSounds();
@@ -325,6 +346,7 @@ function loadModels() {
         treasurechestModel = gltf.scene;
         treasurechestModel.scale.set(2, 2, 2);
         treasurechestModel.rotation.y = Math.PI / 4;
+        treasurechestModel.position.y = -1; // Move the chest slightly downward
         
         // Store animations with the model if they exist
         if (gltf.animations && gltf.animations.length > 0) {
@@ -426,22 +448,78 @@ function loadModels() {
         console.error('Error loading switches model:', error);
     });
     
-    // Load puzzle pieces model - placeholder for now
-    loader.load('models/treasurechest/treasure_chest.glb', function(gltf) {
+    // Load directional pad puzzle model
+    loader.load('models/puzzle/directional_pad_larger_base.glb', function(gltf) {
         puzzleModel = gltf.scene;
         puzzleModel.scale.set(2, 2, 2);
-        puzzleModel.rotation.y = Math.PI / 4;
+        // Adjust rotation for top-down view
+        puzzleModel.rotation.x = Math.PI / 2; // Rotate 90 degrees to make top face up
+        puzzleModel.rotation.y = 0;
+        puzzleModel.rotation.z = 0;
         
         // Store animations
         if (gltf.animations && gltf.animations.length > 0) {
             puzzleModel.animations = gltf.animations;
         }
         
-        // Enable shadows for all meshes
+        // Enable shadows for all meshes and fix materials
         puzzleModel.traverse(function(child) {
             if (child.isMesh) {
                 child.castShadow = true;
                 child.receiveShadow = true;
+                console.log(`Puzzle model part: ${child.name}`);
+                
+                // Fix materials on load
+                if (child.material) {
+                    // Ensure material is properly initialized
+                    child.material.needsUpdate = true;
+                    
+                    // Improve material properties
+                    if (child.material.metalness !== undefined) {
+                        // Prevent excessive reflections by limiting metalness
+                        child.material.metalness = Math.min(child.material.metalness, 0.7);
+                        child.material.roughness = Math.max(child.material.roughness, 0.3);
+                    }
+                    
+                    // Add emissive glow to directional buttons for better visibility
+                    if (child.name.startsWith('arrow_')) {
+                        // Get direction from name
+                        const direction = child.name.substring(6);
+                        
+                        // Set different emissive colors based on direction
+                        switch(direction) {
+                            case 'N':
+                                child.material.emissive = new THREE.Color(0x005500); // Green
+                                break;
+                            case 'S': 
+                                child.material.emissive = new THREE.Color(0x550000); // Red
+                                break;
+                            case 'E':
+                                child.material.emissive = new THREE.Color(0x000055); // Blue
+                                break;
+                            case 'W':
+                                child.material.emissive = new THREE.Color(0x555500); // Yellow
+                                break;
+                            case 'NE':
+                            case 'NW':
+                            case 'SE':
+                            case 'SW':
+                                child.material.emissive = new THREE.Color(0x333333); // Grey
+                                break;
+                        }
+                        child.material.emissiveIntensity = 0.3;
+                    }
+                    
+                    // Fix center button's material
+                    if (child.name === 'center_gold') {
+                        // Ensure the center gold button has good visibility
+                        child.material.emissive = new THREE.Color(0x553300);
+                        child.material.emissiveIntensity = 0.4;
+                        child.material.metalness = 0.8;
+                        child.material.roughness = 0.2;
+                        child.material.envMapIntensity = 1.5;
+                    }
+                }
             }
         });
         
@@ -450,6 +528,8 @@ function loadModels() {
         scene.add(puzzleModel);
         
         setupPuzzleInteractions(puzzleModel);
+    }, undefined, function(error) {
+        console.error('Error loading puzzle model:', error);
     });
 }
 
@@ -473,7 +553,7 @@ function switchModel(modelName) {
     
     console.log(`Switching model to: ${modelName}`);
     
-    // 当切换离开switches模型时，清除颜色标签
+    // When switching away from switches model, clear color labels
     if (currentModelName === 'switches') {
         document.querySelectorAll('.color-label').forEach(label => {
             label.remove();
@@ -489,18 +569,113 @@ function switchModel(modelName) {
     currentModelName = modelName;
     
     // Reset camera and controls
-    camera.position.set(0, 0, 5);
+    switch(modelName) {
+        case 'treasurechest':
+            camera.position.set(0, 0, 5);
+            camera.rotation.set(0, 0, 0);
+            break;
+        case 'switches':
+            camera.position.set(0, 0, 5);
+            camera.rotation.set(0, 0, 0);
+            break;
+        case 'puzzle':
+            // Set to top-down view
+            camera.position.set(0, 0, 8);  // Increase height
+            camera.position.y = -3;        // Move back a bit
+            camera.lookAt(0, 0, 0);        // Ensure camera is looking at model center
+            break;
+        default:
+            camera.position.set(0, 0, 5);
+            camera.rotation.set(0, 0, 0);
+    }
+    
     controls.reset();
     
     switch(modelName) {
         case 'treasurechest':
             currentModel = treasurechestModel;
+            // Reset standard lighting
+            light1.position.set(5, 5, 5);
+            light2.position.set(-5, 5, -5);
+            directionalLight.position.set(0, 5, 10);
+            sideLight.position.set(-8, 2, 0);
+            
+            // Reset intensities
+            light1.intensity = 1.2;
+            light2.intensity = 0.7;
+            light3.intensity = 0.8;
+            directionalLight.intensity = 1;
+            sideLight.intensity = 1.5;
+            
+            // Turn off sun light for treasure chest
+            sunLight.intensity = 0;
+            
+            // Deactivate breathing light effect
+            breathingLightActive = false;
             break;
+            
         case 'switches':
             currentModel = switchesModel;
+            // Reset standard lighting
+            light1.position.set(5, 5, 5);
+            light2.position.set(-5, 5, -5);
+            directionalLight.position.set(0, 5, 10);
+            sideLight.position.set(-8, 2, 0);
+            
+            // Reset intensities
+            light1.intensity = 1.2;
+            light2.intensity = 0.7;
+            light3.intensity = 0.8;
+            directionalLight.intensity = 1;
+            sideLight.intensity = 1.5;
+            
+            // Turn off sun light for switches
+            sunLight.intensity = 0;
+            
+            // Deactivate breathing light effect
+            breathingLightActive = false;
             break;
+            
         case 'puzzle':
             currentModel = puzzleModel;
+            
+            // Adjust light positions for more balanced illumination
+            light1.position.set(3, 5, 3); // Lower and adjust position
+            light2.position.set(-3, 5, -3); // Lower and adjust position
+            directionalLight.position.set(0, 8, 5); // Lower height and increase side angle
+            sideLight.position.set(0, 6, -8); // Adjust side light position
+            
+            // Adjust light intensities for more balanced illumination
+            light1.intensity = 0.8; // Reduce intensity
+            light2.intensity = 0.8; // Reduce intensity
+            light3.intensity = 1.0; // Adjust ambient light
+            directionalLight.intensity = 1.0; // Reduce intensity
+            sideLight.intensity = 0.6; // Reduce intensity
+            
+            // Adjust sun position and intensity
+            sunLight.position.set(2, 12, 8); // Move sun position to reduce excessive brightness at the top
+            sunLight.intensity = 1.2; // Reduce sun intensity
+            sunLight.color.set(0xfffaf0); // Maintain warm sunlight color
+            
+            // Activate breathing light effect for the center gold sphere
+            breathingLightActive = true;
+            
+            // Optimize materials for better visibility
+            puzzleModel.traverse(function(child) {
+                if (child.isMesh) {
+                    // Ensure all materials have proper settings
+                    if (child.material) {
+                        // Make sure materials respond well to lighting
+                        child.material.needsUpdate = true;
+                        
+                        if (child.material.metalness !== undefined) {
+                            // Adjust metalness/roughness for better light reflection
+                            child.material.metalness = Math.min(child.material.metalness, 0.7);
+                            child.material.roughness = Math.max(child.material.roughness, 0.3);
+                        }
+                    }
+                }
+            });
             break;
     }
     
@@ -797,16 +972,16 @@ function setupSwitchesInteractions(model) {
     
     // Rainbow colors for buttons (in RGB format)
     const buttonColors = [
-        new THREE.Color(1.0, 0.1, 0.1),   // 鲜艳的红色
-        new THREE.Color(1.0, 0.5, 0.0),   // 鲜艳的橙色
-        new THREE.Color(1.0, 1.0, 0.0),   // 鲜艳的黄色
-        new THREE.Color(0.0, 0.8, 0.0),   // 鲜艳的绿色
-        new THREE.Color(0.1, 0.4, 1.0),   // 鲜艳的蓝色
-        new THREE.Color(0.5, 0.0, 0.9),   // 鲜艳的靛色
-        new THREE.Color(0.9, 0.1, 0.9)    // 鲜艳的紫色
+        new THREE.Color(1.0, 0.1, 0.1),   // Vibrant red
+        new THREE.Color(1.0, 0.5, 0.0),   // Vibrant orange
+        new THREE.Color(1.0, 1.0, 0.0),   // Vibrant yellow
+        new THREE.Color(0.0, 0.8, 0.0),   // Vibrant green
+        new THREE.Color(0.1, 0.4, 1.0),   // Vibrant blue
+        new THREE.Color(0.5, 0.0, 0.9),   // Vibrant indigo
+        new THREE.Color(0.9, 0.1, 0.9)    // Vibrant purple
     ];
     
-    // 颜色名称（用于显示标签）
+    // Color names (for displaying labels)
     const colorNames = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Purple"];
     
     // Current color index for each button (starts at -1 = no color)
@@ -837,13 +1012,13 @@ function setupSwitchesInteractions(model) {
         const nextIndex = (currentIndex + 1) % 8; // 7 colors + 1 no color
         buttonColorIndices[button.name] = nextIndex;
         
-        // 播放对应音符的声音
+        // Play sound corresponding to the note
         if (nextIndex >= 0 && nextIndex <= 6) {
-            // 对应关系：红-哆，橙-瑞，黄-咪，绿-发，蓝-嗦，靛-啦，紫-西
+            // Mapping relationship: red-Do, orange-Re, yellow-Mi, green-Fa, blue-Sol, indigo-La, purple-Ti
             const notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
             playSound('note_' + notes[nextIndex]);
         } else {
-            // 无色时播放高音哆
+            // Play high Do when no color
             playSound('note_C2');
         }
         
@@ -858,21 +1033,21 @@ function setupSwitchesInteractions(model) {
                 color: buttonColors[nextIndex],
                 metalness: 0.8,
                 roughness: 0.1,
-                emissive: buttonColors[nextIndex],  // 添加自发光
-                emissiveIntensity: 0.3             // 适度的自发光强度
+                emissive: buttonColors[nextIndex],  // Add self-illumination
+                emissiveIntensity: 0.3             // Moderate self-illumination intensity
             });
             button.material = newMaterial;
             
-            // 获取按钮编号用于显示标签
+            // Get button number for displaying label
             const buttonNumber = parseInt(button.name.split('_')[1]);
             
-            // 删除之前的标签（如果存在）
+            // Delete existing label (if any)
             const existingLabel = document.getElementById(`color-label-${buttonNumber}`);
             if (existingLabel) {
                 existingLabel.remove();
             }
             
-            // 添加颜色名称标签
+            // Add color name label
             const colorLabel = document.createElement('div');
             colorLabel.id = `color-label-${buttonNumber}`;
             colorLabel.className = 'color-label';
@@ -886,7 +1061,7 @@ function setupSwitchesInteractions(model) {
             colorLabel.style.fontWeight = 'bold';
             colorLabel.style.zIndex = '10';
             
-            // 计算标签位置（基于按钮数量动态计算）
+            // Calculate label position (based on button count dynamically)
             const buttonCount = buttons.length;
             const modelContainer = document.getElementById('model-container');
             const leftOffset = modelContainer.offsetWidth * 0.1;
@@ -896,13 +1071,13 @@ function setupSwitchesInteractions(model) {
             colorLabel.style.bottom = '70px';
             colorLabel.style.left = `${leftPos}px`;
             colorLabel.style.transform = 'translateX(-50%)';
-            colorLabel.style.pointerEvents = 'none'; // 防止干扰点击
+            colorLabel.style.pointerEvents = 'none'; // Prevent interference with clicks
             
             modelContainer.appendChild(colorLabel);
         }
     }
     
-    // 函数用于清除所有颜色标签
+    // Function to clear all color labels
     function clearColorLabels() {
         document.querySelectorAll('.color-label').forEach(label => {
             label.remove();
@@ -987,15 +1162,15 @@ function setupSwitchesInteractions(model) {
         if (isCorrect) {
             puzzleSolved.switches = true;
             
-            // 播放成功的音阶
+            // Play successful sequence
             playSuccessfulSequence();
             
-            // 显示第三关的线索
+            // Display clue for next puzzle after 3 seconds
             setTimeout(() => {
                 showClueForNextPuzzle();
             }, 3000);
             
-            // 如果成功解谜，在几秒后移除标签
+            // If puzzle is solved, remove labels after 6 seconds
             setTimeout(() => {
                 clearColorLabels();
             }, 6000);
@@ -1004,7 +1179,7 @@ function setupSwitchesInteractions(model) {
         }
     }
     
-    // 添加连续播放上行音阶的函数
+    // Add function to play successful sequence
     function playSuccessfulSequence() {
         const notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C2'];
         let delay = 0;
@@ -1013,7 +1188,7 @@ function setupSwitchesInteractions(model) {
             setTimeout(() => {
                 playNoteSound(note, 0.3);
             }, delay);
-            delay += 250; // 每个音符间隔250毫秒
+            delay += 250; // Each note plays 250ms after the previous
         });
     }
 
@@ -1078,10 +1253,445 @@ function getIntersects(event) {
 
 // Puzzle pieces interactions setup
 function setupPuzzleInteractions(model) {
-    // Setup puzzle pieces interaction logic
-    // For example, click to rotate pieces to form correct pattern
+    console.log("Setting up directional pad puzzle interactions");
     
-    console.log("Puzzle pieces interactions setup complete");
+    // Store references to all interactive parts
+    let arrowButtons = [];
+    let buttonBases = [];
+    let centerGold = null;
+    let centerBase = null;
+    
+    // Find all buttons in the model
+    model.traverse((child) => {
+        if (child.isMesh) {
+            console.log(`Found mesh in puzzle: ${child.name}`);
+            
+            // Store arrow buttons
+            if (child.name.startsWith('arrow_')) {
+                arrowButtons.push(child);
+                child.userData.isArrow = true;
+                child.userData.direction = child.name.substring(6); // Extract "N", "NE", etc.
+                console.log(`Found arrow button: ${child.name}, direction: ${child.userData.direction}`);
+            }
+            
+            // Store button bases
+            if (child.name.startsWith('button_')) {
+                buttonBases.push(child);
+                child.userData.isButtonBase = true;
+                child.userData.direction = child.name.substring(7); // Extract "N", "NE", etc.
+                console.log(`Found button base: ${child.name}, direction: ${child.userData.direction}`);
+                
+                // Make the base clickable as well so the user doesn't have to click the small arrow only
+                child.userData.clickable = true;
+            }
+            
+            // Store center gold button
+            if (child.name === 'center_gold') {
+                centerGold = child;
+                centerGoldSphere = child; // Store globally for breathing effect
+                centerGold.userData.isCenterGold = true;
+                console.log('Found center gold button');
+                
+                // Save original emissive color for breathing effect
+                if (child.material) {
+                    centerGoldOriginalEmissive = child.material.emissive.clone();
+                }
+            }
+            
+            // Store center base
+            if (child.name === 'center_base') {
+                centerBase = child;
+                centerBase.userData.isCenterBase = true;
+                console.log('Found center base');
+            }
+            
+            // Make all buttons clickable
+            if (child.name.startsWith('arrow_') || child.name === 'center_gold') {
+                child.userData.clickable = true;
+            }
+        }
+    });
+    
+    // Store original positions for animation
+    arrowButtons.forEach(button => {
+        button.userData.originalPosition = button.position.clone();
+    });
+    
+    if (centerGold) {
+        centerGold.userData.originalPosition = centerGold.position.clone();
+    }
+    
+    // Store button state
+    const buttonState = {};
+    arrowButtons.forEach(button => {
+        const direction = button.userData.direction;
+        buttonState[direction] = {
+            pressed: false,
+            highlightMaterial: null,
+            originalMaterial: button.material ? button.material.clone() : null
+        };
+    });
+    
+    // Create center button state
+    if (centerGold) {
+        buttonState['center'] = {
+            pressed: false,
+            highlightMaterial: null,
+            originalMaterial: centerGold.material ? centerGold.material.clone() : null
+        };
+    }
+    
+    // Create highlight materials for buttons
+    arrowButtons.forEach(button => {
+        const direction = button.userData.direction;
+        if (button.material) {
+            // Clone original material
+            buttonState[direction].originalMaterial = button.material.clone();
+            
+            // Create highlighted version (brighter, with emissive glow)
+            const highlightMaterial = button.material.clone();
+            highlightMaterial.emissive = new THREE.Color(0x333333);
+            highlightMaterial.emissiveIntensity = 0.5;
+            buttonState[direction].highlightMaterial = highlightMaterial;
+        }
+    });
+    
+    if (centerGold && centerGold.material) {
+        // Clone original material for center gold
+        buttonState['center'].originalMaterial = centerGold.material.clone();
+        
+        // Create highlighted version (brighter, with emissive glow)
+        const highlightMaterial = centerGold.material.clone();
+        highlightMaterial.emissive = new THREE.Color(0xffaa00);
+        highlightMaterial.emissiveIntensity = 0.5;
+        buttonState['center'].highlightMaterial = highlightMaterial;
+    }
+    
+    // Track sequence of pressed buttons
+    const pressedSequence = [];
+    
+    // The correct sequence (clockwise from North)
+    const correctSequence = ['N', 'E', 'S', 'W', 'NE', 'SE', 'SW', 'NW', 'center'];
+    
+    // Create the click handler function
+    window.puzzleClickHandler = (event) => {
+        const intersects = getIntersects(event);
+        
+        for (let i = 0; i < intersects.length; i++) {
+            const object = intersects[i].object;
+            
+            // Check if clicked object is an arrow button or center gold
+            if (object.userData.clickable) {
+                console.log(`Clicked on puzzle button: ${object.name}`);
+                
+                if (object.userData.isArrow || object.userData.isButtonBase) {
+                    const direction = object.userData.direction;
+                    
+                    // Play a sound based on the direction
+                    // We'll map directions to notes in the scale
+                    const soundMap = {
+                        'N': 'note_C',     // Do
+                        'NE': 'note_D',    // Re
+                        'E': 'note_E',     // Mi
+                        'SE': 'note_F',    // Fa
+                        'S': 'note_G',     // Sol
+                        'SW': 'note_A',    // La
+                        'W': 'note_B',     // Ti
+                        'NW': 'note_C2'    // High Do
+                    };
+                    const sound = soundMap[direction] || 'keypadClick';
+                    playSound(sound);
+                    
+                    // Animate button press on the arrow mesh itself if we clicked the base
+                    const targetObject = object.userData.isArrow ? object : arrowButtons.find(btn => btn.userData.direction === direction);
+                    if (targetObject) {
+                        animateButtonPress(targetObject);
+                    }
+                    
+                    // Record in sequence
+                    pressedSequence.push(direction);
+                    
+                } else if (object.userData.isCenterGold) {
+                    // Center gold button acts as submit/check button
+                    playSound('panelClick');
+                    animateButtonPress(object);
+                    
+                    // Add center to sequence
+                    pressedSequence.push('center');
+                    
+                    // Check if the sequence is correct
+                    setTimeout(() => {
+                        checkPuzzleSequence(pressedSequence, correctSequence);
+                    }, 500);
+                }
+                
+                break;
+            }
+        }
+    };
+    
+    // Function to animate button press
+    function animateButtonPress(button) {
+        // Store original position if not already stored
+        if (!button.userData.originalPosition) {
+            button.userData.originalPosition = button.position.clone();
+        }
+        
+        // Move button down based on camera angle
+        let direction;
+        if (currentModelName === 'puzzle') {
+            // In top-down view, button should move down (model has been rotated 90 degrees)
+            direction = new THREE.Vector3(0, -1, 0);
+        } else {
+            // Default direction (z-axis)
+            direction = new THREE.Vector3(0, 0, -1);
+        }
+        
+        // Move button down
+        const downPosition = button.position.clone().add(direction.multiplyScalar(0.05));
+        
+        // Use GSAP for smooth animation
+        gsap.to(button.position, {
+            x: downPosition.x,
+            y: downPosition.y,
+            z: downPosition.z,
+            duration: 0.1,
+            ease: "power1.inOut",
+            onComplete: function() {
+                // Move button back up
+                gsap.to(button.position, {
+                    x: button.userData.originalPosition.x,
+                    y: button.userData.originalPosition.y,
+                    z: button.userData.originalPosition.z,
+                    duration: 0.1,
+                    ease: "power1.out"
+                });
+            }
+        });
+        
+        // Apply highlight material
+        const buttonName = button.userData.isArrow ? button.userData.direction : 'center';
+        if (buttonState[buttonName] && buttonState[buttonName].highlightMaterial) {
+            const originalMaterial = button.material;
+            button.material = buttonState[buttonName].highlightMaterial;
+            
+            // Restore original material after a delay
+            setTimeout(() => {
+                button.material = originalMaterial;
+            }, 300);
+        }
+    }
+    
+    // Function to check if the sequence is correct
+    function checkPuzzleSequence(pressed, correct) {
+        console.log("Checking sequence:", pressed);
+        console.log("Correct sequence:", correct);
+        
+        // Check if the pressed sequence matches the correct sequence
+        let isCorrect = true;
+        if (pressed.length !== correct.length) {
+            isCorrect = false;
+        } else {
+            for (let i = 0; i < pressed.length; i++) {
+                if (pressed[i] !== correct[i]) {
+                    isCorrect = false;
+                    break;
+                }
+            }
+        }
+        
+        if (isCorrect) {
+            console.log("Puzzle solved! Correct sequence!");
+            puzzleSolved.puzzle = true;
+            
+            // First show the success message
+            showSuccessMessage();
+            
+            // Play success sounds and animation
+            playSuccessfulSequence();
+            
+            // Show the third level congratulations popup with a longer delay to ensure the success message is seen first
+            setTimeout(() => {
+                showThirdLevelSuccess();
+            }, 2000);
+            
+            // Trigger any additional success effects or rewards
+            setTimeout(() => {
+                // If all puzzles are solved, you could trigger a final success event
+                if (puzzleSolved.treasurechest && puzzleSolved.switches && puzzleSolved.puzzle) {
+                    console.log("All puzzles solved! Game complete!");
+                    setTimeout(() => {
+                        showFinalSuccess();
+                    }, 2000); // Delay the final success to give time to see the third level success
+                }
+            }, 4000);
+        } else {
+            console.log("Incorrect sequence! Try again.");
+            playSound('passwordError');
+            showErrorMessage();
+            
+            // Reset the sequence
+            pressedSequence.length = 0;
+        }
+    }
+    
+    // Function to show success message
+    function showSuccessMessage() {
+        // Remove any existing message
+        const existingMessage = document.getElementById('puzzle-result');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+        
+        // Create result message
+        const resultMessage = document.createElement('div');
+        resultMessage.id = 'puzzle-result';
+        resultMessage.style.position = 'absolute';
+        resultMessage.style.top = '50%';
+        resultMessage.style.left = '50%';
+        resultMessage.style.transform = 'translate(-50%, -50%)';
+        resultMessage.style.padding = '25px 40px';
+        resultMessage.style.borderRadius = '8px';
+        resultMessage.style.color = 'white';
+        resultMessage.style.fontWeight = 'bold';
+        resultMessage.style.boxShadow = '0 6px 20px rgba(0,0,0,0.4)';
+        resultMessage.style.zIndex = '5000';
+        resultMessage.style.backgroundColor = '#27ae60';
+        resultMessage.style.fontSize = '28px';
+        resultMessage.style.textAlign = 'center';
+        resultMessage.style.opacity = '0';
+        resultMessage.style.transition = 'opacity 0.5s ease';
+        resultMessage.textContent = 'Congratulations — you’ve escaped the room!';
+        
+        // Add message to container
+        document.getElementById('model-container').appendChild(resultMessage);
+        
+        // Fade in the message
+        setTimeout(() => {
+            resultMessage.style.opacity = '1';
+        }, 50);
+        
+        // Show success message for longer (5 seconds)
+        setTimeout(() => {
+            if (document.getElementById('puzzle-result')) {
+                const message = document.getElementById('puzzle-result');
+                message.style.opacity = '0';
+                message.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => {
+                    if (message) message.remove();
+                }, 500);
+            }
+        }, 5000);
+
+        // Also play a success sound
+        playSound('passwordSuccess');
+    }
+    
+    // Function to show error message
+    function showErrorMessage() {
+        // Remove any existing message
+        const existingMessage = document.getElementById('puzzle-result');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+        
+        // Create result message
+        const resultMessage = document.createElement('div');
+        resultMessage.id = 'puzzle-result';
+        resultMessage.style.position = 'absolute';
+        resultMessage.style.top = '20px';
+        resultMessage.style.left = '50%';
+        resultMessage.style.transform = 'translateX(-50%)';
+        resultMessage.style.padding = '10px 20px';
+        resultMessage.style.borderRadius = '5px';
+        resultMessage.style.color = 'white';
+        resultMessage.style.fontWeight = 'bold';
+        resultMessage.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+        resultMessage.style.zIndex = '1000';
+        resultMessage.style.backgroundColor = '#c0392b';
+        resultMessage.textContent = 'Incorrect sequence! Try again.';
+        
+        // Add message to container
+        document.getElementById('model-container').appendChild(resultMessage);
+        
+        // Remove message after 3 seconds
+        setTimeout(() => {
+            if (document.getElementById('puzzle-result')) {
+                document.getElementById('puzzle-result').remove();
+            }
+        }, 3000);
+    }
+    
+    // Function to show final success when all puzzles are solved
+    function showFinalSuccess() {
+        // Create a full-screen overlay
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+        overlay.style.zIndex = '10000';
+        overlay.style.transition = 'opacity 1s ease-in-out';
+        overlay.style.opacity = '0';
+        
+        // Add success message
+        const message = document.createElement('h1');
+        message.textContent = 'CONGRATULATIONS!';
+        message.style.color = '#ffd700';
+        message.style.fontSize = '48px';
+        message.style.marginBottom = '20px';
+        message.style.textShadow = '0 0 10px rgba(255, 215, 0, 0.7)';
+        overlay.appendChild(message);
+        
+        // Add sub-message
+        const subMessage = document.createElement('h2');
+        subMessage.textContent = 'You\'ve successfully escaped the room!';
+        subMessage.style.color = 'white';
+        subMessage.style.fontSize = '24px';
+        subMessage.style.marginBottom = '40px';
+        overlay.appendChild(subMessage);
+        
+        // Add replay button
+        const replayButton = document.createElement('button');
+        replayButton.textContent = 'PLAY AGAIN';
+        replayButton.style.padding = '15px 30px';
+        replayButton.style.fontSize = '18px';
+        replayButton.style.backgroundColor = '#3498db';
+        replayButton.style.color = 'white';
+        replayButton.style.border = 'none';
+        replayButton.style.borderRadius = '5px';
+        replayButton.style.cursor = 'pointer';
+        replayButton.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+        replayButton.style.transition = 'all 0.3s ease';
+        replayButton.addEventListener('mouseover', () => {
+            replayButton.style.backgroundColor = '#2980b9';
+            replayButton.style.transform = 'scale(1.05)';
+        });
+        replayButton.addEventListener('mouseout', () => {
+            replayButton.style.backgroundColor = '#3498db';
+            replayButton.style.transform = 'scale(1)';
+        });
+        replayButton.addEventListener('click', () => {
+            window.location.reload();
+        });
+        overlay.appendChild(replayButton);
+        
+        // Add to page
+        document.body.appendChild(overlay);
+        
+        // Fade in
+        setTimeout(() => {
+            overlay.style.opacity = '1';
+        }, 100);
+    }
+    
+    console.log("Directional pad puzzle interactions setup complete");
 }
 
 // Handle 3D object click
@@ -1118,7 +1728,11 @@ function onModelClick(event) {
                 }
                 break;
             case 'puzzle':
-                handlePuzzleClick(object);
+                if (window.puzzleClickHandler) {
+                    window.puzzleClickHandler(event);
+                } else {
+                    console.log('Puzzle click handler not initialized');
+                }
                 break;
         }
     }
@@ -1876,6 +2490,21 @@ function animate() {
         chestAnimationMixer.update(0.016); // Update with approximately 60fps
     }
     
+    // Update breathing light effect on center gold sphere
+    if (breathingLightActive && centerGoldSphere && centerGoldSphere.material) {
+        // Use a sine wave for smooth breathing effect
+        const pulseValue = Math.sin(Date.now() * 0.003) * 0.5 + 0.5; // Value between 0 and 1
+        const pulseColor = new THREE.Color(0xffaa00); // Golden orange glow
+        
+        // Update the emissive color and intensity
+        centerGoldSphere.material.emissive.copy(pulseColor);
+        centerGoldSphere.material.emissiveIntensity = pulseValue * 0.7 + 0.3; // Value between 0.3 and 1.0
+    } else if (!breathingLightActive && centerGoldSphere && centerGoldSphere.material && centerGoldOriginalEmissive) {
+        // Reset to original emissive when not active
+        centerGoldSphere.material.emissive.copy(centerGoldOriginalEmissive);
+        centerGoldSphere.material.emissiveIntensity = 0.4; // Reset to original
+    }
+    
     controls.update();
     renderer.render(scene, camera);
 }
@@ -1883,9 +2512,9 @@ function animate() {
 // Initialize when page is loaded
 window.addEventListener('load', init);
 
-// 添加一个显示下一关线索的函数
+// Add a function to display the clue for the next puzzle
 function showClueForNextPuzzle() {
-    // 创建线索提示容器
+    // Create clue container
     const clueContainer = document.createElement('div');
     clueContainer.id = 'puzzle-clue';
     clueContainer.className = 'puzzle-clue';
@@ -1905,8 +2534,7 @@ function showClueForNextPuzzle() {
     clueContainer.style.opacity = '0';
     clueContainer.style.transition = 'opacity 1s ease-in-out';
     
-    // 这是一个谜题线索，比如一个解谜的提示或密码
-    // 这里我创建一个简单的图案，指向第三关的解决方案
+
     clueContainer.innerHTML = `
         <h3 style="color: #ffcc00; margin-bottom: 15px;">Puzzle 3 Pattern Revealed</h3>
         <div style="margin: 10px auto; width: 200px; display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: 10px;">
@@ -1924,10 +2552,10 @@ function showClueForNextPuzzle() {
         <button id="close-clue" style="margin-top: 15px; padding: 8px 15px; background: #444; border: none; color: white; border-radius: 5px; cursor: pointer;">Close</button>
     `;
     
-    // 添加到DOM
+    // Add to DOM
     document.getElementById('model-container').appendChild(clueContainer);
     
-    // 添加关闭按钮事件
+    // Add close button event
     setTimeout(() => {
         document.getElementById('close-clue').addEventListener('click', function() {
             clueContainer.style.opacity = '0';
@@ -1937,11 +2565,150 @@ function showClueForNextPuzzle() {
         });
     }, 100);
     
-    // 显示线索
+    // Display clue
     setTimeout(() => {
         clueContainer.style.opacity = '1';
     }, 100);
     
-    // 记录玩家已经收到了线索
+    // Record that the player has received the clue
     localStorage.setItem('puzzle2_clue_revealed', 'true');
+}
+
+// Add function to show third level success popup specifically for the directional pad puzzle
+function showThirdLevelSuccess() {
+    console.log("Showing third level success popup");
+    
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'third-level-success';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.75)';
+    overlay.style.display = 'flex';
+    overlay.style.flexDirection = 'column';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.zIndex = '10000'; // Ensure this is higher than other elements
+    overlay.style.transition = 'opacity 0.5s ease-in-out';
+    overlay.style.opacity = '0';
+    
+    // Create success message container
+    const messageContainer = document.createElement('div');
+    messageContainer.style.backgroundColor = '#1a1a1a';
+    messageContainer.style.borderRadius = '10px';
+    messageContainer.style.boxShadow = '0 0 30px rgba(255, 215, 0, 0.6)';
+    messageContainer.style.padding = '30px';
+    messageContainer.style.maxWidth = '500px';
+    messageContainer.style.textAlign = 'center';
+    
+    // Create congratulations title
+    const title = document.createElement('h2');
+    title.textContent = 'Congratulations!';
+    title.style.color = '#ffd700';
+    title.style.fontSize = '36px';
+    title.style.marginBottom = '20px';
+    title.style.textShadow = '0 0 10px rgba(255, 215, 0, 0.5)';
+    messageContainer.appendChild(title);
+    
+    // Create success message
+    const message = document.createElement('p');
+    message.textContent = 'You have successfully solved the third puzzle and escaped from the chamber!';
+    message.style.color = 'white';
+    message.style.fontSize = '18px';
+    message.style.lineHeight = '1.5';
+    message.style.marginBottom = '25px';
+    messageContainer.appendChild(message);
+    
+    // Create continue button
+    const continueButton = document.createElement('button');
+    continueButton.textContent = 'Continue';
+    continueButton.style.padding = '12px 30px';
+    continueButton.style.fontSize = '16px';
+    continueButton.style.backgroundColor = '#ffd700';
+    continueButton.style.color = '#1a1a1a';
+    continueButton.style.border = 'none';
+    continueButton.style.borderRadius = '5px';
+    continueButton.style.cursor = 'pointer';
+    continueButton.style.fontWeight = 'bold';
+    continueButton.style.transition = 'all 0.2s ease';
+    continueButton.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+    
+    // Add hover effects
+    continueButton.addEventListener('mouseover', () => {
+        continueButton.style.backgroundColor = '#ffeb3b';
+        continueButton.style.transform = 'scale(1.05)';
+    });
+    continueButton.addEventListener('mouseout', () => {
+        continueButton.style.backgroundColor = '#ffd700';
+        continueButton.style.transform = 'scale(1)';
+    });
+    
+    // Add click handler to close the popup
+    continueButton.addEventListener('click', () => {
+        gsap.to(overlay, {
+            opacity: 0,
+            duration: 0.5,
+            onComplete: () => {
+                overlay.remove();
+            }
+        });
+    });
+    
+    messageContainer.appendChild(continueButton);
+    overlay.appendChild(messageContainer);
+    document.body.appendChild(overlay);
+    
+    // Show the overlay with animation (with a slight delay to ensure it renders properly)
+    setTimeout(() => {
+        overlay.style.opacity = '1';
+    }, 100);
+    
+    // Add particles/confetti effect for celebration
+    createConfetti(overlay);
+}
+
+// Function to create confetti effect for the success popup
+function createConfetti(parent) {
+    const confettiContainer = document.createElement('div');
+    confettiContainer.style.position = 'absolute';
+    confettiContainer.style.top = '0';
+    confettiContainer.style.left = '0';
+    confettiContainer.style.width = '100%';
+    confettiContainer.style.height = '100%';
+    confettiContainer.style.pointerEvents = 'none';
+    confettiContainer.style.zIndex = '-1';
+    parent.appendChild(confettiContainer);
+    
+    // Create multiple confetti particles
+    const colors = ['#ffd700', '#ff5722', '#2196f3', '#4caf50', '#9c27b0', '#e91e63'];
+    
+    for (let i = 0; i < 100; i++) {
+        const particle = document.createElement('div');
+        const size = Math.random() * 10 + 5;
+        
+        particle.style.position = 'absolute';
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        particle.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+        particle.style.top = '-20px';
+        particle.style.left = `${Math.random() * 100}%`;
+        confettiContainer.appendChild(particle);
+        
+        // Random rotation and floating animation using GSAP
+        gsap.to(particle, {
+            y: `${window.innerHeight + 20}px`,
+            x: `+=${(Math.random() * 200) - 100}px`,
+            rotation: Math.random() * 360,
+            duration: Math.random() * 3 + 2,
+            ease: 'power1.out',
+            delay: Math.random() * 2,
+            onComplete: () => {
+                particle.remove();
+            }
+        });
+    }
 } 
