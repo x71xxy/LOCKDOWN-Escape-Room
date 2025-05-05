@@ -1,6 +1,6 @@
 # LOCKDOWN - Escape Room 3D Experience
 
-This is a web-based escape room 3D interactive application built with Three.js. Players need to solve three different puzzles (Lockbox Code, Sequence Switches, and Puzzle Pieces) to complete the escape.
+This is a web-based escape room 3D interactive application built with Three.js. Players need to solve three different puzzles (Treasure Chest, Sequence Switches, and Directional Puzzle) to complete the escape.
 
 ## Project Structure
 
@@ -8,35 +8,43 @@ This is a web-based escape room 3D interactive application built with Three.js. 
 LOCKDOWN/
 │
 ├── index.html              # Main HTML file
+├── submission.html         # Project submission information
 ├── css/
-│   └── style.css           # Stylesheet
+│   ├── style.css           # Main stylesheet
+│   └── password-dialog.css # Password dialog styles
 ├── js/
-│   └── main.js             # Main JavaScript file
+│   ├── main.js             # Main JavaScript file
+│   ├── treasure-chest/     # Treasure chest module
+│   └── sequence-buttons/   # Sequence buttons module
 ├── models/                 # 3D models folder
-│   ├── lockbox.glb         # Lockbox code model
-│   ├── switches.glb        # Sequence switches model
-│   └── puzzle.glb          # Puzzle pieces model
+│   ├── treasurechest/      # Treasure chest model files
+│   │   └── treasure_chest.glb
+│   ├── switches/           # Switches model files
+│   │   └── switches.glb
+│   └── puzzle/             # Puzzle model files
+│       └── directional_pad_larger_base.glb
+├── sounds/                 # Sound effects
+│   ├── chest-open.mp3
+│   ├── chest-close.mp3
+│   └── success.mp3
 └── images/                 # Image resources folder
-    ├── escape-room-bg.jpg  # Background image
-    ├── lockbox-thumb.jpg   # Lockbox thumbnail
-    ├── switches-thumb.jpg  # Switches thumbnail
-    └── puzzle-thumb.jpg    # Puzzle thumbnail
 ```
 
 ## Features
 
 - Three detailed 3D puzzle models, each with unique interactions
 - Wireframe mode to view model structures
-- Lighting control functionality
+- Lighting control functionality with intensity adjustment
 - Model rotation and zoom functionality
 - Responsive design, adapting to different screen sizes
-- Game progress tracking
+- Game progress tracking and animation effects
+- Interactive puzzle elements with sound effects
 
 ## Puzzle Descriptions
 
 1. **Treasure Chest**: Find and enter the hidden code to unlock the chest and reveal what's inside
 2. **Sequence Switches**: Click multiple colored buttons in the correct sequence to activate light mechanisms
-3. **Puzzle Pieces**: Click to rotate model pieces, triggers a hint when correct pattern is formed
+3. **Directional Puzzle**: Click to rotate model pieces, triggers a hint when correct pattern is formed
 
 ## Technology Stack
 
@@ -46,20 +54,23 @@ LOCKDOWN/
 - Three.js (3D rendering)
 - GSAP (animations)
 - Font Awesome (icons)
+- Web Audio API (sound effects)
 
 ## How to Run
 
-1. Ensure all 3D model files are placed in the `models/` folder
-2. Ensure all image resources are placed in the `images/` folder
-3. Use a local server to run the project (due to CORS restrictions, opening the HTML file directly may not load 3D models)
+1. Clone this repository
+2. Open the project folder in a local development server
+   - Due to CORS restrictions, opening the HTML file directly may not load 3D models
+   - You can use tools like Live Server extension in VS Code or Python's `http.server` module
+3. Navigate to index.html in your browser
 
-## Future Development
+## About This Project
 
-- Add more puzzles and 3D models
-- Implement timer functionality
-- Add hint system
-- Implement multiple levels
-- Add sound effects and background music
+This project was developed as part of a Web 3D Technologies assignment, showcasing the application of 3D models in a web environment. The complete source code and project description are available in the GitHub repository.
+
+## GitHub Repository
+
+https://github.com/x71xxy/LOCKDOWN-Escape-Room
 
 ## License
 
