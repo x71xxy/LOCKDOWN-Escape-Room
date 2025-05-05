@@ -27,7 +27,7 @@ LOCKDOWN/
 │   ├── chest-open.mp3
 │   ├── chest-close.mp3
 │   └── success.mp3
-└── images/                 # Image resources folder
+└──                  
 ```
 
 ## Features
@@ -68,9 +68,6 @@ LOCKDOWN/
 
 This project was developed as part of a Web 3D Technologies assignment, showcasing the application of 3D models in a web environment. The complete source code and project description are available in the GitHub repository.
 
-## GitHub Repository
-
-https://github.com/x71xxy/LOCKDOWN-Escape-Room
 
 ## License
 

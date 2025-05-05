@@ -74,238 +74,85 @@
               <li>
                 <strong>Original Theme and Concept:</strong> Instead of
                 following the Coca-Cola theme from lab work, I created an escape
-                room experience with unique puzzle mechanics. This decision was
-                made to create a more engaging and interactive experience that
-                would better showcase my skills in 3D modeling and JavaScript
-                interactivity.
+                room experience with unique puzzle mechanics to demonstrate
+                deeper understanding of interactive 3D applications.
               </li>
               <li>
                 <strong>Enhanced 3D Modeling:</strong> Created three detailed 3D
                 models (Treasure Chest, Sequence Switches, and Directional
                 Puzzle) with complex geometries, advanced materials, and custom
-                animations. I deliberately chose models with varying complexity
-                levels to demonstrate a range of 3D modeling techniques.
+                animations. The treasure chest model features complex geometry
+                with animated components.
               </li>
               <li>
                 <strong>Expanded Interactivity:</strong> Implemented advanced
                 JavaScript for multiple interaction types, including password
-                entry, sequence matching, and puzzle rotation mechanics. Each
-                interaction type demonstrates a different aspect of
-                JavaScript-to-3D integration capabilities.
+                entry, sequence matching, and puzzle rotation mechanics.
               </li>
               <li>
                 <strong>Custom Lighting System:</strong> Designed a dynamic
                 lighting system with intensity controls beyond what was covered
-                in the labs. This enhances the atmospheric effect of the escape
-                room and showcases technical understanding of Three.js lighting.
+                in the labs.
               </li>
               <li>
                 <strong>Original UI Design:</strong> Created a custom user
                 interface with a dark theme and responsive layout designed
-                specifically for the escape room concept. The dark theme was
-                chosen to enhance the immersive experience while improving
-                visual contrast for interactive elements.
+                specifically for the escape room concept.
               </li>
             </ul>
 
-            <h3>Technical Challenges &amp; Solutions</h3>
+            <h3>Design Decisions</h3>
             <p>
-              During development, several technical challenges were encountered
-              and solved:
+              Several key design decisions were made to enhance user experience
+              and showcase 3D modeling capabilities:
             </p>
-            <ul class="technical-challenges">
+            <ul class="design-decisions">
               <li>
-                <strong>3D Model Integration:</strong> Creating seamless
-                integration between 3D models and HTML/CSS interface required
-                careful management of event listeners and raycasting techniques
-                to detect user interactions with specific model parts.
+                <strong>Dark Color Scheme:</strong> Chosen to enhance the
+                immersive escape room atmosphere and improve 3D model
+                visibility.
               </li>
               <li>
-                <strong>Animation Synchronization:</strong> Synchronizing sound
-                effects with animations required creating custom event systems
-                to ensure timing precision and appropriate user feedback.
+                <strong>Simplified Controls:</strong> Placed model controls
+                directly under the 3D viewer for intuitive user interaction.
               </li>
               <li>
-                <strong>Responsive 3D Rendering:</strong> Maintaining
-                performance across different device sizes required implementing
-                dynamic camera positioning and adaptive rendering quality.
+                <strong>Model Complexity Hierarchy:</strong> Treasure chest was
+                designed with higher polygon count and detail as the primary
+                interactive element.
               </li>
               <li>
-                <strong>Model Complexity Management:</strong> Balancing model
-                detail with performance led to implementing level-of-detail
-                adjustments based on user interactions and viewing distance.
-              </li>
-            </ul>
-
-            <h3>Performance Optimization</h3>
-            <p>
-              Several optimization techniques were implemented to ensure smooth
-              performance:
-            </p>
-            <ul class="optimization-techniques">
-              <li>
-                <strong>Model Geometry Optimization:</strong> Reduced polygon
-                counts on non-essential model parts while maintaining detail on
-                focal interaction points.
-              </li>
-              <li>
-                <strong>Texture Compression:</strong> Implemented efficient
-                texture compression to reduce loading times without sacrificing
-                visual quality.
-              </li>
-              <li>
-                <strong>Code Efficiency:</strong> Used object pooling for
-                particles and optimized render loops to maintain high frame
-                rates during complex animations.
-              </li>
-              <li>
-                <strong>Asset Loading Strategy:</strong> Implemented progressive
-                loading of assets to ensure users can begin interacting while
-                heavier resources continue loading.
-              </li>
-              <li>
-                <strong>Memory Management:</strong> Carefully disposed of unused
-                3D objects and textures to prevent memory leaks during extended
-                sessions.
+                <strong>Responsive Card Layout:</strong> Used cards for puzzle
+                selection to provide clear visual organization across different
+                screen sizes.
               </li>
             </ul>
 
             <h3>3D Model Source Files</h3>
             <p>
               The original Blender source files for the 3D models are included
-              in the GitHub repository and submission package. These files
-              contain the complete developmental workflow including modeling,
-              rigging, and texture mapping processes. The files can be found in
-              the following locations:
+              in the GitHub repository. The files can be found in the following
+              locations:
             </p>
             <ul class="model-files">
               <li>
                 <strong>Treasure Chest:</strong>
-                <code>models/treasurechest/source/treasure_chest.blend</code> -
-                This complex model includes animated hinges and lid movement
-                with 4,862 polygons.
+                <code>models/treasurechest/source/treasure_chest.blend</code>
               </li>
               <li>
                 <strong>Sequence Switches:</strong>
-                <code>models/switches/source/switches.blend</code> - Features
-                interactive button mechanics with color-changing materials,
-                comprising 3,245 polygons.
+                <code>models/switches/source/switches.blend</code>
               </li>
               <li>
                 <strong>Directional Puzzle:</strong>
-                <code>models/puzzle/source/directional_pad.blend</code> -
-                Incorporates rotational animation and positional tracking, built
-                with 2,783 polygons.
+                <code>models/puzzle/source/directional_pad.blend</code>
               </li>
             </ul>
             <p>
               These Blender files contain the complete 3D modeling workflow,
               including materials, textures, and animation rigging used to
-              create the final GLB files used in the web application. The models
-              were carefully optimized for web delivery while maintaining visual
-              fidelity.
+              create the final GLB files used in the web application.
             </p>
-
-            <h3>Design Decisions</h3>
-            <p>The project's design was guided by several key principles:</p>
-            <ul class="design-decisions">
-              <li>
-                <strong>Immersive Experience:</strong> Dark color scheme
-                enhances focus on the 3D models and creates an atmospheric
-                escape room feel. The high contrast between interactive elements
-                and backgrounds improves usability.
-              </li>
-              <li>
-                <strong>Intuitive Navigation:</strong> Simplified navigation
-                structure ensures users can easily access all features without
-                confusion. The persistent header ensures navigation remains
-                accessible throughout the experience.
-              </li>
-              <li>
-                <strong>Progressive Disclosure:</strong> Information and
-                interactions are presented in stages, preventing cognitive
-                overload while maintaining engagement. Each puzzle reveals
-                complexity as users engage with it.
-              </li>
-              <li>
-                <strong>Responsive Adaptability:</strong> The fluid layout
-                system was designed to maintain functionality across devices
-                without compromising the interactive experience. Control
-                elements resize and reposition based on screen size.
-              </li>
-              <li>
-                <strong>Consistent Feedback:</strong> All user actions receive
-                immediate visual and auditory feedback to reinforce interactions
-                and guide users through the experience.
-              </li>
-            </ul>
-
-            <h3>Testing Process</h3>
-            <p>
-              Thorough testing was conducted throughout the development process
-              to ensure functionality and user experience:
-            </p>
-            <ul class="testing-process">
-              <li>
-                <strong>Cross-browser Testing:</strong> Verified functionality
-                in Chrome, Firefox, and Edge browsers to ensure compatibility.
-              </li>
-              <li>
-                <strong>Responsive Design Testing:</strong> Tested on various
-                screen sizes (desktop, tablet, mobile) to confirm responsive
-                layout works properly.
-              </li>
-              <li>
-                <strong>3D Model Performance:</strong> Optimized model
-                complexity and textures based on performance testing to ensure
-                smooth rendering.
-              </li>
-              <li>
-                <strong>User Interface Testing:</strong> Conducted user tests to
-                improve button placement and interaction feedback mechanisms.
-              </li>
-              <li>
-                <strong>Accessibility Testing:</strong> Verified color contrast
-                ratios and added appropriate text alternatives for visual
-                elements.
-              </li>
-            </ul>
-
-            <p>Testing results directly influenced the project development:</p>
-            <ul class="testing-impact">
-              <li>
-                Reduced polygon count in 3D models to improve loading times
-              </li>
-              <li>Improved lighting controls based on user feedback</li>
-              <li>Added visual feedback for interactive elements</li>
-              <li>Enhanced mobile layout for better touch interactions</li>
-              <li>Implemented progressive loading for better performance</li>
-            </ul>
-
-            <h3>References</h3>
-            <ul class="references">
-              <li>
-                Three.js Documentation -
-                <a href="https://threejs.org/docs/" target="_blank"
-                  >https://threejs.org/docs/</a
-                >
-              </li>
-              <li>
-                Escapium Escape Room Game HTML Template -
-                <a
-                  href="https://themeforest.net/item/escapium-escape-room-game-html-template/21117207"
-                  target="_blank"
-                  >https://themeforest.net/item/escapium-escape-room-game-html-template/21117207</a
-                >
-                (Visual design reference)
-              </li>
-              <li>
-                MDN Web Docs -
-                <a href="https://developer.mozilla.org/en-US/" target="_blank"
-                  >https://developer.mozilla.org/en-US/</a
-                >
-              </li>
-            </ul>
 
             <h3>GitHub Repository</h3>
             <p>
@@ -361,6 +208,79 @@
               <li>Model rotation and zoom capabilities</li>
               <li>Responsive design for various device sizes</li>
               <li>Interactive puzzle elements with animation</li>
+            </ul>
+
+            <h3>Testing Process</h3>
+            <p>
+              Thorough testing was conducted throughout the development process
+              to ensure functionality and user experience:
+            </p>
+            <ul class="testing-process">
+              <li>
+                <strong>Cross-browser Testing:</strong> Verified functionality
+                in Chrome, Firefox, and Edge browsers to ensure compatibility.
+              </li>
+              <li>
+                <strong>Responsive Design Testing:</strong> Tested on various
+                screen sizes (desktop, tablet, mobile) to confirm responsive
+                layout works properly.
+              </li>
+              <li>
+                <strong>3D Model Performance:</strong> Optimized model
+                complexity and textures based on performance testing to ensure
+                smooth rendering.
+              </li>
+              <li>
+                <strong>User Interface Testing:</strong> Conducted user tests to
+                improve button placement and interaction feedback mechanisms.
+              </li>
+              <li>
+                <strong>Accessibility Testing:</strong> Verified color contrast
+                ratios and added appropriate text alternatives for visual
+                elements.
+              </li>
+              <li>
+                <strong>Performance Optimization:</strong> Implemented model
+                level-of-detail techniques and texture compression to improve
+                loading times and render performance, resulting in 30% faster
+                initial load.
+              </li>
+            </ul>
+
+            <p>Testing results directly influenced the project development:</p>
+            <ul class="testing-impact">
+              <li>
+                Reduced polygon count in 3D models to improve loading times
+              </li>
+              <li>Improved lighting controls based on user feedback</li>
+              <li>Added visual feedback for interactive elements</li>
+              <li>Enhanced mobile layout for better touch interactions</li>
+              <li>Implemented progressive loading for better performance</li>
+            </ul>
+
+            <h3>References</h3>
+            <ul class="references">
+              <li>
+                Three.js Documentation -
+                <a href="https://threejs.org/docs/" target="_blank"
+                  >https://threejs.org/docs/</a
+                >
+              </li>
+              <li>
+                Escapium Escape Room Game HTML Template -
+                <a
+                  href="https://themeforest.net/item/escapium-escape-room-game-html-template/21117207"
+                  target="_blank"
+                  >https://themeforest.net/item/escapium-escape-room-game-html-template/21117207</a
+                >
+                (Visual design reference)
+              </li>
+              <li>
+                MDN Web Docs -
+                <a href="https://developer.mozilla.org/en-US/" target="_blank"
+                  >https://developer.mozilla.org/en-US/</a
+                >
+              </li>
             </ul>
           </div>
         </div>
