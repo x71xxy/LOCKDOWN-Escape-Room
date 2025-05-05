@@ -1,4 +1,4 @@
-/* 基础样式 */
+/* Base Styles */
 :root {
     --primary-color: #ff3a2d;
     --secondary-color: #222;
@@ -47,7 +47,7 @@ button {
     transition: all 0.3s ease;
 }
 
-/* 加载动画 */
+/* Loading Animation */
 .loader-wrapper {
     position: fixed;
     top: 0;
@@ -78,7 +78,7 @@ button {
     }
 }
 
-/* 头部 */
+/* Header */
 header {
     display: flex;
     justify-content: space-between;
@@ -154,7 +154,7 @@ nav ul li a.active::after {
     box-shadow: 0 4px 10px rgba(255, 58, 45, 0.4);
 }
 
-/* 英雄区域 */
+/* Hero Section */
 .hero {
     height: 100vh;
     background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)), url('../images/escape-room-bg.jpg');
